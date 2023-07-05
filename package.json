@@ -1,0 +1,23 @@
+{
+  "name": "perlin-project",
+  "version": "1.0.0",
+  "description": "Very simple landscape generated using perline noise.",
+  "main": "main.js",
+  "private": "true",
+  "scripts": {
+    "build": "tsc && webpack"
+  },
+  "author": "Ian Malcolm",
+  "license": "ISC",
+  "devDependencies": {
+    "@webgpu/types": "^0.1.34",
+    "copy-webpack-plugin": "^11.0.0",
+    "typescript": "^5.1.6",
+    "webpack": "^5.88.1",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "gl-matrix": "^3.4.3",
+    "guify": "^0.15.1"
+  }
+}
