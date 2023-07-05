@@ -1,6 +1,7 @@
 struct VertIn {
     @builtin(instance_index) instanceInd: u32,
-    @builtin(vertex_index) vertInd: u32
+    @builtin(vertex_index) vertInd: u32,
+    @location(0) pos: vec2f
 };
 
 struct VertOut {
@@ -9,11 +10,14 @@ struct VertOut {
 }
 
 @vertex
-fn (input: VertIn) -> VertOut {
-
+fn vert_entry(input: VertIn) -> VertOut {
+    var out: VertOut;
+    out.pos = vec4f(input.pos, 0, 1);
+    out.color = vec4f(0,0,1,1);
+    return out;
 }
 
 @fragment
-fn (input: VertOut) -> @location(0) color: vec4f {
-    
+fn frag_entry(input: VertOut) -> @location(0) vec4f {
+    return input.color;
 }

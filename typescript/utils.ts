@@ -1,3 +1,5 @@
+import {mat4} from "gl-matrix";
+
 export async function init() {
     const adapter = await navigator.gpu?.requestAdapter();
     const device = await adapter?.requestDevice();
@@ -18,4 +20,15 @@ export async function init() {
     });
 
     return { device, canvas, context }
+}
+
+export function fillPerspectiveMatrix(matrix: mat4, fovY: number, aspect: number, zNear: number, zFar: number) {
+    const f = Math.tan((Math.PI - fovY) / 2);
+    const zRangeInvrs = 1 / (zNear - zFar);
+    mat4.set(matrix,
+        f / aspect, 0, 0, 0,
+        0, f, 0, 0,
+        0, 0, zFar * zRangeInvrs, -1,
+        0, 0, zNear * zFar * zRangeInvrs, 1
+    );
 }
