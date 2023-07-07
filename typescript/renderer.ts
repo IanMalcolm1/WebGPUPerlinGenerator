@@ -5,8 +5,7 @@ export interface PerspectiveSettings {
     fovY: number,
     translation: vec3,
     rotation: vec3,
-    buffer: GPUBuffer,
-    matrix: mat4
+    buffer: GPUBuffer
 }
 
 export class Renderer {
@@ -160,27 +159,13 @@ export class Renderer {
             size: 16 * 4,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
-        const perpsectiveMatrix: mat4 = mat4.create();
-        mat4.set(perpsectiveMatrix,
-            2 / this.canvas.clientWidth, 0, 0, 0,
-            0, -2 / this.canvas.clientHeight, 0, 0,
-            0, 0, 1, 0,
-            -1, 1, 0, 1
-        );
 
         this.perspective = {
             fovY: Math.PI / 3,
             translation: vec3.create(),
             rotation: vec3.create(),
-            buffer: perspectiveBuffer,
-            matrix: perpsectiveMatrix
+            buffer: perspectiveBuffer
         }
-
-        // TODO: change back to an actual perspective matrix
-        // And update with gui (and later mouse controls)
-        //this.fillPerspectiveMatrix();
-
-        this.device.queue.writeBuffer(perspectiveBuffer, 0, new Float32Array(perpsectiveMatrix));
     }
 
     render() {
@@ -190,7 +175,7 @@ export class Renderer {
             label: "Render Pass Encoder",
             colorAttachments: [{
                 view: this.context.getCurrentTexture().createView(),
-                clearValue: { r: 0, g: 0, b: 1, a: 1 },
+                clearValue: { r: 0, g: 0, b: 0, a: 1 },
                 loadOp: "clear",
                 storeOp: "store"
             }],
@@ -203,27 +188,41 @@ export class Renderer {
             }, */
         });
 
+        const camera: mat4 = mat4.create();
+        mat4.rotateX(camera, camera, this.perspective.rotation[0]);
+        mat4.rotateY(camera, camera, this.perspective.rotation[1]);
+        mat4.rotateZ(camera, camera, this.perspective.rotation[2]);
+        mat4.translate(camera, camera, this.perspective.translation);
+
+        const view: mat4 = mat4.invert(mat4.create(), camera);
+        const perspective: mat4 = this.fillPerspectiveMatrix(mat4.create());
+        mat4.multiply(view, perspective, view);
+
+        this.device.queue.writeBuffer(this.perspective.buffer, 0, new Float32Array(view));
+
         pass.setPipeline(this.pipeline);
         pass.setBindGroup(0, this.bindGroup);
         pass.setVertexBuffer(0, this.vertexBuffer);
         pass.setIndexBuffer(this.indexBuffer, "uint16");
-        pass.drawIndexed(this.numIndices, this.mapLengthTriangles * 4);
+        pass.drawIndexed(this.numIndices, this.mapLengthTriangles * this.mapLengthTriangles);
         pass.end()
 
         this.device.queue.submit([encoder.finish()]);
     }
 
-    fillPerspectiveMatrix() {
+    fillPerspectiveMatrix(matrix: mat4): mat4 {
         const aspect = this.canvas.clientWidth / this.canvas.clientHeight;
-        const zNear = -1;
-        const zFar = -1500;
+        const zNear = 1;
+        const zFar = 2000;
         const f = Math.tan((Math.PI - this.perspective.fovY) / 2);
         const zRangeInvrs = 1 / (zNear - zFar);
-        mat4.set(this.perspective.matrix,
+        mat4.set(matrix,
             f / aspect, 0, 0, 0,
             0, f, 0, 0,
             0, 0, zFar * zRangeInvrs, -1,
             0, 0, zNear * zFar * zRangeInvrs, 1
         );
+
+        return matrix;
     }
 }

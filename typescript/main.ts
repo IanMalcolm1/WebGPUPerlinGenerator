@@ -1,9 +1,10 @@
 import * as utils from "./utils";
 import { mat4 } from "gl-matrix";
 import { Renderer } from "./renderer";
+import { guify } from "guify";
 
 async function main() {
-    const mapLengthTriangles = 18;
+    const mapLengthTriangles = 128;
     const { device, canvas, context } = await utils.initWebGPU();
 
     //this particular buffer is used by both the Renderer and PerlinGenerator
@@ -18,6 +19,12 @@ async function main() {
     const renderer: Renderer = new Renderer(device, canvas, context);
     await renderer.init(mapLengthTriangles, heightMapBuffer);
 
+    const gui = utils.makePerspectiveGUI(renderer.perspective);
+
+    setInterval(function() { run(renderer) }, 17);
+}
+
+function run(renderer: Renderer) {
     renderer.render();
 }
 

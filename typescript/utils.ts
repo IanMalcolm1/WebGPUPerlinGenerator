@@ -1,5 +1,5 @@
 import { mat4, vec3 } from "gl-matrix";
-import * as guify from "guify";
+import {guify} from "guify";
 import { PerspectiveSettings } from "./renderer";
 
 export async function initWebGPU() {
@@ -24,7 +24,7 @@ export async function initWebGPU() {
     return { device, canvas, context }
 }
 
-export function makeSettingsGUI(settings: PerspectiveSettings) {
+export function makePerspectiveGUI(settings: PerspectiveSettings) {
     var gui = new guify({ title: "3D Stuff", align: "right" });
     gui.Register([
         {
@@ -55,10 +55,6 @@ export function makeSettingsGUI(settings: PerspectiveSettings) {
             type: 'range', label: 'Rotation Z',
             min: 0, max: 2 * Math.PI, step: 0.1,
             object: settings.rotation, property: '2'
-        }, {
-            type: 'range', label: 'Scale',
-            min: 0.25, max: 5, step: 0.25,
-            object: settings, property: 'scale'
         }
     ]);
 

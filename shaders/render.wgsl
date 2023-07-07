@@ -28,7 +28,7 @@ fn vert_entry(in: VertIn) -> VertOut {
 
     out.pos = perpective_matrix*out.pos;
 
-    out.color = vec4f(0,1,1,1);
+    out.color = vec4f(0,0,1,1);
     return out;
 }
 
