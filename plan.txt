@@ -1,10 +1,6 @@
 Step 1:
 Have compute shader make flat plane with color based on x and y coords
-- At first just make vertices manually
-- Then maybe try generating x/y coords (in 3d space, not clip space) based on instance index?
-  - vertices would basically just be colors
-  - could calculate colors like this too, I guess
-  - save memory, not too much loss to performance, probably
+- Make interval function Run so can choose between compute or render pipeline
 
 Step 2:
 Integrate camera movement (mouse and keyboard control)

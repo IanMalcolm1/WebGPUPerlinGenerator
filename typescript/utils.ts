@@ -1,6 +1,8 @@
-import {mat4} from "gl-matrix";
+import { mat4, vec3 } from "gl-matrix";
+import * as guify from "guify";
+import { PerspectiveSettings } from "./renderer";
 
-export async function init() {
+export async function initWebGPU() {
     const adapter = await navigator.gpu?.requestAdapter();
     const device = await adapter?.requestDevice();
     if (!device) {
@@ -22,13 +24,55 @@ export async function init() {
     return { device, canvas, context }
 }
 
-export function fillPerspectiveMatrix(matrix: mat4, fovY: number, aspect: number, zNear: number, zFar: number) {
-    const f = Math.tan((Math.PI - fovY) / 2);
-    const zRangeInvrs = 1 / (zNear - zFar);
-    mat4.set(matrix,
-        f / aspect, 0, 0, 0,
-        0, f, 0, 0,
-        0, 0, zFar * zRangeInvrs, -1,
-        0, 0, zNear * zFar * zRangeInvrs, 1
-    );
+export function makeSettingsGUI(settings: PerspectiveSettings) {
+    var gui = new guify({ title: "3D Stuff", align: "right" });
+    gui.Register([
+        {
+            type: 'range', label: 'FoV',
+            min: 0, max: Math.PI, step: 0.1,
+            object: settings, property: 'fovY'
+        }, {
+            type: 'range', label: 'Translation X',
+            min: -600, max: 600, step: 10,
+            object: settings.translation, property: '0'
+        }, {
+            type: 'range', label: 'Translation Y',
+            min: -600, max: 600, step: 10,
+            object: settings.translation, property: '1'
+        }, {
+            type: 'range', label: 'Translation Z',
+            min: -3000, max: 100, step: 10,
+            object: settings.translation, property: '2'
+        }, {
+            type: 'range', label: 'Rotation X',
+            min: 0, max: 2 * Math.PI, step: 0.1,
+            object: settings.rotation, property: '0'
+        }, {
+            type: 'range', label: 'Rotation Y',
+            min: 0, max: 2 * Math.PI, step: 0.1,
+            object: settings.rotation, property: '1'
+        }, {
+            type: 'range', label: 'Rotation Z',
+            min: 0, max: 2 * Math.PI, step: 0.1,
+            object: settings.rotation, property: '2'
+        }, {
+            type: 'range', label: 'Scale',
+            min: 0.25, max: 5, step: 0.25,
+            object: settings, property: 'scale'
+        }
+    ]);
+
+    return gui;
+}
+
+
+export async function makeShaderModule(device: GPUDevice, filePath: string): Promise<GPUShaderModule> {
+    const renderShadersFile = await fetch(filePath);
+    const renderShaders: string = await renderShadersFile.text();
+    const renderModule: GPUShaderModule = device.createShaderModule({
+        label: "F shader module",
+        code: renderShaders
+    });
+
+    return renderModule;
 }
