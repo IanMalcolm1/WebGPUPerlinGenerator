@@ -4,7 +4,7 @@ import { Renderer } from "./renderer";
 import { guify } from "guify";
 
 async function main() {
-    const mapLengthTriangles = 128;
+    const mapLengthTriangles = 256;
     const { device, canvas, context } = await utils.initWebGPU();
 
     //this particular buffer is used by both the Renderer and PerlinGenerator

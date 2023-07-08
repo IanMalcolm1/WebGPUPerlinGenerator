@@ -1,9 +1,6 @@
-Step 1:
-Have compute shader make flat plane with color based on x and y coords
-- Make interval function Run so can choose between compute or render pipeline
-
-Step 2:
-Integrate camera movement (mouse and keyboard control)
+Current:
+Make camera appear on top of plane from beginning
+Make movement less janky?
 
 Step 3:
 Random number generator

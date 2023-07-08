@@ -94,7 +94,7 @@ export class Renderer {
                 targets: [{ format: navigator.gpu.getPreferredCanvasFormat() }]
             },
             primitive: {
-                //cullMode: "back",
+                cullMode: "back"
             },
             /*
             depthStencil: {
@@ -143,7 +143,7 @@ export class Renderer {
 
     private makeIndexBuffer() {
         const indexData: Uint16Array = new Uint16Array([
-            0, 2, 1, 1, 2, 3, 2, 4, 5, 2, 5, 3
+            0, 1, 2, 1, 3, 2, 2, 5, 4, 2, 3, 5
         ]);
         this.numIndices = indexData.length;
         this.indexBuffer = this.device.createBuffer({
@@ -168,6 +168,15 @@ export class Renderer {
             buffer: perspectiveBuffer,
             camera: mat4.create()
         }
+
+        this.perspective.translation[0] = this.mapLengthTriangles*this.triangleUnitLength/2;
+        this.perspective.translation[1] = this.mapLengthTriangles*this.triangleUnitLength/2;
+        this.perspective.translation[2] = 512;
+
+        mat4.translate(this.perspective.camera, this.perspective.camera, this.perspective.translation);
+        mat4.rotateX(this.perspective.camera, this.perspective.camera, Math.PI/2);
+
+        this.perspective.translation.fill(0);
     }
 
     private printStats() {
@@ -182,16 +191,22 @@ export class Renderer {
 
     handleKeyPress(event: KeyboardEvent) {
         if (event.code==="KeyW") {
-            this.perspective.translation[2] = -10;
+            this.perspective.translation[2] = -100;
         }
         if (event.code==="KeyS") {
-            this.perspective.translation[2] = 10;
+            this.perspective.translation[2] = 100;
         }
         if (event.code==="KeyA") {
-            this.perspective.translation[0] = -10;
+            this.perspective.translation[0] = -100;
         }
         if (event.code==="KeyD") {
-            this.perspective.translation[0] = 10;
+            this.perspective.translation[0] = 100;
+        }
+        if (event.code==="Space") {
+            this.perspective.translation[1] = 100;
+        }
+        if (event.code==="ShiftLeft") {
+            this.perspective.translation[1] = -100;
         }
 
         mat4.translate(this.perspective.camera, this.perspective.camera, this.perspective.translation);
@@ -199,8 +214,8 @@ export class Renderer {
     }
 
     handleMouseMove(event: MouseEvent) {
-        const rotationY = ((-event.movementX/this.canvas.clientWidth)*(2*Math.PI))%(Math.PI*2);
-        const rotationX = ((-event.movementY/this.canvas.clientHeight)*(2*Math.PI))%(Math.PI*2);
+        const rotationY = (3*(-event.movementX/this.canvas.clientWidth)*(2*Math.PI))%(2*Math.PI);
+        const rotationX = (3*(-event.movementY/this.canvas.clientHeight)*(2*Math.PI))%(2*Math.PI);
 
         mat4.rotateX(this.perspective.camera, this.perspective.camera, rotationX);
         mat4.rotateY(this.perspective.camera, this.perspective.camera, rotationY);
@@ -226,9 +241,6 @@ export class Renderer {
             }, */
         });
 
-
-        mat4.translate(this.perspective.camera, this.perspective.camera, this.perspective.translation);
-
         const view: mat4 = mat4.invert(mat4.create(), this.perspective.camera);
         const perspective: mat4 = this.fillPerspectiveMatrix(mat4.create());
         mat4.multiply(view, perspective, view);
@@ -240,7 +252,7 @@ export class Renderer {
         pass.setVertexBuffer(0, this.vertexBuffer);
         pass.setIndexBuffer(this.indexBuffer, "uint16");
         pass.drawIndexed(this.numIndices, this.mapLengthTriangles * this.mapLengthTriangles);
-        pass.end()
+        pass.end();
 
         this.device.queue.submit([encoder.finish()]);
     }
@@ -248,7 +260,7 @@ export class Renderer {
     fillPerspectiveMatrix(matrix: mat4): mat4 {
         const aspect = this.canvas.clientWidth / this.canvas.clientHeight;
         const zNear = 1;
-        const zFar = 2000;
+        const zFar = 20000;
         const f = Math.tan((Math.PI - this.perspective.fovY) / 2);
         const zRangeInvrs = 1 / (zNear - zFar);
         mat4.set(matrix,
