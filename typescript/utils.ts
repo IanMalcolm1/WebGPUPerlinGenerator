@@ -25,7 +25,7 @@ export async function initWebGPU() {
 }
 
 export function makePerspectiveGUI(settings: PerspectiveSettings) {
-    var gui = new guify({ title: "3D Stuff", align: "right" });
+    var gui = new guify({ title: "3D Stuff" });
     gui.Register([
         {
             type: 'range', label: 'FoV',

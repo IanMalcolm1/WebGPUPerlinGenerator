@@ -18,8 +18,13 @@ async function main() {
 
     const renderer: Renderer = new Renderer(device, canvas, context);
     await renderer.init(mapLengthTriangles, heightMapBuffer);
-
-    const gui = utils.makePerspectiveGUI(renderer.perspective);
+    
+    document.addEventListener("keydown", function(event) {
+        renderer.handleKeyPress(event);
+    });
+    document.querySelector("canvas").addEventListener("mousemove", function(event) {
+        renderer.handleMouseMove(event);
+    });
 
     setInterval(function() { run(renderer) }, 17);
 }

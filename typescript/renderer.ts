@@ -5,7 +5,8 @@ export interface PerspectiveSettings {
     fovY: number,
     translation: vec3,
     rotation: vec3,
-    buffer: GPUBuffer
+    buffer: GPUBuffer,
+    camera: mat4
 }
 
 export class Renderer {
@@ -164,8 +165,45 @@ export class Renderer {
             fovY: Math.PI / 3,
             translation: vec3.create(),
             rotation: vec3.create(),
-            buffer: perspectiveBuffer
+            buffer: perspectiveBuffer,
+            camera: mat4.create()
         }
+    }
+
+    private printStats() {
+        let stats: string =
+        "Translation: " + this.perspective.translation[0] + ", " +
+        this.perspective.translation[1] + ", " + this.perspective.translation[2] +
+        "\nRotation: " + this.perspective.rotation[0] + ", " + this.perspective.rotation[1] +
+        ", " + this.perspective.rotation[2];
+
+        document.getElementById("stats").textContent = stats;
+    }
+
+    handleKeyPress(event: KeyboardEvent) {
+        if (event.code==="KeyW") {
+            this.perspective.translation[2] = -10;
+        }
+        if (event.code==="KeyS") {
+            this.perspective.translation[2] = 10;
+        }
+        if (event.code==="KeyA") {
+            this.perspective.translation[0] = -10;
+        }
+        if (event.code==="KeyD") {
+            this.perspective.translation[0] = 10;
+        }
+
+        mat4.translate(this.perspective.camera, this.perspective.camera, this.perspective.translation);
+        this.perspective.translation.fill(0);
+    }
+
+    handleMouseMove(event: MouseEvent) {
+        const rotationY = ((-event.movementX/this.canvas.clientWidth)*(2*Math.PI))%(Math.PI*2);
+        const rotationX = ((-event.movementY/this.canvas.clientHeight)*(2*Math.PI))%(Math.PI*2);
+
+        mat4.rotateX(this.perspective.camera, this.perspective.camera, rotationX);
+        mat4.rotateY(this.perspective.camera, this.perspective.camera, rotationY);
     }
 
     render() {
@@ -188,13 +226,10 @@ export class Renderer {
             }, */
         });
 
-        const camera: mat4 = mat4.create();
-        mat4.rotateX(camera, camera, this.perspective.rotation[0]);
-        mat4.rotateY(camera, camera, this.perspective.rotation[1]);
-        mat4.rotateZ(camera, camera, this.perspective.rotation[2]);
-        mat4.translate(camera, camera, this.perspective.translation);
 
-        const view: mat4 = mat4.invert(mat4.create(), camera);
+        mat4.translate(this.perspective.camera, this.perspective.camera, this.perspective.translation);
+
+        const view: mat4 = mat4.invert(mat4.create(), this.perspective.camera);
         const perspective: mat4 = this.fillPerspectiveMatrix(mat4.create());
         mat4.multiply(view, perspective, view);
 
