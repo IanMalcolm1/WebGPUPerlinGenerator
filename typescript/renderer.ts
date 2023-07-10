@@ -18,19 +18,18 @@ export class Renderer {
     bindGroup: GPUBindGroup;
     indexBuffer: GPUBuffer;
     numIndices: number;
-    mapLengthTriangles: number;
-    triangleUnitLength: number;
+    verticesPerSection: number;
+    dimensions: utils.MapDimensions;
     perspective: PerspectiveSettings;
 
     constructor(device: GPUDevice, canvas: HTMLCanvasElement, context: GPUCanvasContext) {
         this.device = device;
         this.canvas = canvas;
         this.context = context;
-        this.triangleUnitLength = 32;
     }
 
-    async init(mapLengthTriangles: number, heightMapBuffer: GPUBuffer) {
-        this.mapLengthTriangles = mapLengthTriangles;
+    async init(mapDimensions: utils.MapDimensions, heightMapBuffer: GPUBuffer) {
+        this.dimensions = mapDimensions;
 
         const dimensionsBuffer: GPUBuffer = this.makeDimensionsBuffer();
         const vertexBufferLayout: GPUVertexBufferLayout = this.makeVertexBuffer();
@@ -94,7 +93,7 @@ export class Renderer {
                 targets: [{ format: navigator.gpu.getPreferredCanvasFormat() }]
             },
             primitive: {
-                cullMode: "back"
+                //cullMode: "back"
             },
             /*
             depthStencil: {
@@ -106,25 +105,28 @@ export class Renderer {
     }
 
     private makeDimensionsBuffer(): GPUBuffer {
+        const planeDimensions: Uint32Array = new Uint32Array([
+            this.dimensions.lengthInSections, this.dimensions.triangleSideLength
+        ]);
         const planeDimensionsUniform: GPUBuffer = this.device.createBuffer({
             label: "Plane Dimensions",
-            size: 2 * 4,
+            size: planeDimensions.byteLength,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
-        const planeDimensions: Uint32Array = new Uint32Array([this.mapLengthTriangles, this.triangleUnitLength]);
         this.device.queue.writeBuffer(planeDimensionsUniform, 0, planeDimensions);
 
         return planeDimensionsUniform;
     }
 
     private makeVertexBuffer(): GPUVertexBufferLayout {
-        const sqrt3UnitLength = this.triangleUnitLength * Math.sqrt(3);
+        const sqrt3UnitLength = this.dimensions.triangleSideLength * Math.sqrt(3);
 
         const vertexData: Float32Array = new Float32Array([
-            0, 0, 2 * this.triangleUnitLength, 0,
-            this.triangleUnitLength, sqrt3UnitLength, 3 * this.triangleUnitLength, sqrt3UnitLength,
-            0, 2 * sqrt3UnitLength, 2 * this.triangleUnitLength, 2 * sqrt3UnitLength,
+            0, 0, this.dimensions.triangleSideLength, 0,
+            this.dimensions.triangleSideLength/2, sqrt3UnitLength, 3*this.dimensions.triangleSideLength/2, sqrt3UnitLength,
+            0, 2 * sqrt3UnitLength, this.dimensions.triangleSideLength, 2 * sqrt3UnitLength,
         ]);
+        this.verticesPerSection = vertexData.length;
 
         this.vertexBuffer = this.device.createBuffer({
             label: "Vertex Buffer",
@@ -169,43 +171,43 @@ export class Renderer {
             camera: mat4.create()
         }
 
-        this.perspective.translation[0] = this.mapLengthTriangles*this.triangleUnitLength/2;
-        this.perspective.translation[1] = this.mapLengthTriangles*this.triangleUnitLength/2;
+        this.perspective.translation[0] = this.dimensions.lengthInSections * this.dimensions.triangleSideLength / 2;
+        this.perspective.translation[1] = this.dimensions.heightInSections * this.dimensions.triangleSideLength * Math.sqrt(3);
         this.perspective.translation[2] = 512;
 
         mat4.translate(this.perspective.camera, this.perspective.camera, this.perspective.translation);
-        mat4.rotateX(this.perspective.camera, this.perspective.camera, Math.PI/2);
+        mat4.rotateX(this.perspective.camera, this.perspective.camera, Math.PI / 2);
 
         this.perspective.translation.fill(0);
     }
 
     private printStats() {
         let stats: string =
-        "Translation: " + this.perspective.translation[0] + ", " +
-        this.perspective.translation[1] + ", " + this.perspective.translation[2] +
-        "\nRotation: " + this.perspective.rotation[0] + ", " + this.perspective.rotation[1] +
-        ", " + this.perspective.rotation[2];
+            "Translation: " + this.perspective.translation[0] + ", " +
+            this.perspective.translation[1] + ", " + this.perspective.translation[2] +
+            "\nRotation: " + this.perspective.rotation[0] + ", " + this.perspective.rotation[1] +
+            ", " + this.perspective.rotation[2];
 
         document.getElementById("stats").textContent = stats;
     }
 
     handleKeyPress(event: KeyboardEvent) {
-        if (event.code==="KeyW") {
+        if (event.code === "KeyW") {
             this.perspective.translation[2] = -100;
         }
-        if (event.code==="KeyS") {
+        if (event.code === "KeyS") {
             this.perspective.translation[2] = 100;
         }
-        if (event.code==="KeyA") {
+        if (event.code === "KeyA") {
             this.perspective.translation[0] = -100;
         }
-        if (event.code==="KeyD") {
+        if (event.code === "KeyD") {
             this.perspective.translation[0] = 100;
         }
-        if (event.code==="Space") {
+        if (event.code === "Space") {
             this.perspective.translation[1] = 100;
         }
-        if (event.code==="ShiftLeft") {
+        if (event.code === "ShiftLeft") {
             this.perspective.translation[1] = -100;
         }
 
@@ -214,8 +216,8 @@ export class Renderer {
     }
 
     handleMouseMove(event: MouseEvent) {
-        const rotationY = (3*(-event.movementX/this.canvas.clientWidth)*(2*Math.PI))%(2*Math.PI);
-        const rotationX = (3*(-event.movementY/this.canvas.clientHeight)*(2*Math.PI))%(2*Math.PI);
+        const rotationY = (3 * (-event.movementX / this.canvas.clientWidth) * (2 * Math.PI)) % (2 * Math.PI);
+        const rotationX = (3 * (-event.movementY / this.canvas.clientWidth) * (2 * Math.PI)) % (2 * Math.PI);
 
         mat4.rotateX(this.perspective.camera, this.perspective.camera, rotationX);
         mat4.rotateY(this.perspective.camera, this.perspective.camera, rotationY);
@@ -251,7 +253,7 @@ export class Renderer {
         pass.setBindGroup(0, this.bindGroup);
         pass.setVertexBuffer(0, this.vertexBuffer);
         pass.setIndexBuffer(this.indexBuffer, "uint16");
-        pass.drawIndexed(this.numIndices, this.mapLengthTriangles * this.mapLengthTriangles);
+        pass.drawIndexed(this.numIndices, this.dimensions.lengthInSections * this.dimensions.heightInSections);
         pass.end();
 
         this.device.queue.submit([encoder.finish()]);

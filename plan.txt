@@ -1,9 +1,10 @@
 Current:
-Make camera appear on top of plane from beginning
-Make movement less janky?
+Trying to get the height map to work
 
-Step 3:
-Random number generator
+Next:
+Turn culling back on
+Add a depth texture
 
-Step 4:
+Later:
+Pick hash randomizer
 Perlin noise height

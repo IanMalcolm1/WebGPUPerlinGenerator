@@ -17,7 +17,6 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "gl-matrix": "^3.4.3",
-    "guify": "^0.15.1"
+    "gl-matrix": "^3.4.3"
   }
 }

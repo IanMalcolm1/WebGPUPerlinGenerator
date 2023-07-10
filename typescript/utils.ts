@@ -2,6 +2,12 @@ import { mat4, vec3 } from "gl-matrix";
 import {guify} from "guify";
 import { PerspectiveSettings } from "./renderer";
 
+export interface MapDimensions {
+    lengthInSections: number,
+    heightInSections: number,
+    triangleSideLength: number
+}
+
 export async function initWebGPU() {
     const adapter = await navigator.gpu?.requestAdapter();
     const device = await adapter?.requestDevice();
@@ -22,43 +28,6 @@ export async function initWebGPU() {
     });
 
     return { device, canvas, context }
-}
-
-export function makePerspectiveGUI(settings: PerspectiveSettings) {
-    var gui = new guify({ title: "3D Stuff" });
-    gui.Register([
-        {
-            type: 'range', label: 'FoV',
-            min: 0, max: Math.PI, step: 0.1,
-            object: settings, property: 'fovY'
-        }, {
-            type: 'range', label: 'Translation X',
-            min: -600, max: 600, step: 10,
-            object: settings.translation, property: '0'
-        }, {
-            type: 'range', label: 'Translation Y',
-            min: -600, max: 600, step: 10,
-            object: settings.translation, property: '1'
-        }, {
-            type: 'range', label: 'Translation Z',
-            min: -3000, max: 100, step: 10,
-            object: settings.translation, property: '2'
-        }, {
-            type: 'range', label: 'Rotation X',
-            min: 0, max: 2 * Math.PI, step: 0.1,
-            object: settings.rotation, property: '0'
-        }, {
-            type: 'range', label: 'Rotation Y',
-            min: 0, max: 2 * Math.PI, step: 0.1,
-            object: settings.rotation, property: '1'
-        }, {
-            type: 'range', label: 'Rotation Z',
-            min: 0, max: 2 * Math.PI, step: 0.1,
-            object: settings.rotation, property: '2'
-        }
-    ]);
-
-    return gui;
 }
 
 
