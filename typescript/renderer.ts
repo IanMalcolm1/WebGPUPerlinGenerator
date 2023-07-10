@@ -10,17 +10,17 @@ export interface PerspectiveSettings {
 }
 
 export class Renderer {
-    device: GPUDevice;
-    canvas: HTMLCanvasElement;
-    context: GPUCanvasContext;
-    pipeline: GPURenderPipeline;
-    vertexBuffer: GPUBuffer;
-    bindGroup: GPUBindGroup;
-    indexBuffer: GPUBuffer;
-    numIndices: number;
-    verticesPerSection: number;
-    dimensions: utils.MapDimensions;
-    perspective: PerspectiveSettings;
+    private device: GPUDevice;
+    private canvas: HTMLCanvasElement;
+    private context: GPUCanvasContext;
+    private pipeline: GPURenderPipeline;
+    private depthTex: GPUTexture;
+    private vertexBuffer: GPUBuffer;
+    private bindGroup: GPUBindGroup;
+    private indexBuffer: GPUBuffer;
+    private indicesPerSection: number;
+    private dimensions: utils.MapDimensions;
+    private perspective: PerspectiveSettings;
 
     constructor(device: GPUDevice, canvas: HTMLCanvasElement, context: GPUCanvasContext) {
         this.device = device;
@@ -33,6 +33,7 @@ export class Renderer {
 
         const dimensionsBuffer: GPUBuffer = this.makeDimensionsBuffer();
         const vertexBufferLayout: GPUVertexBufferLayout = this.makeVertexBuffer();
+        this.makeDepthTexture();
         this.makeIndexBuffer();
         this.makePerspectiveBuffer();
         const shaderModule = await utils.makeShaderModule(this.device, "./shaders/render.wgsl");
@@ -95,12 +96,19 @@ export class Renderer {
             primitive: {
                 //cullMode: "back"
             },
-            /*
             depthStencil: {
                 depthWriteEnabled: true,
                 depthCompare: 'less',
                 format: 'depth24plus',
-            }*/
+            }
+        });
+    }
+
+    private makeDepthTexture() {
+        this.depthTex = this.device.createTexture({
+            size: [this.context.getCurrentTexture().width, this.context.getCurrentTexture().height],
+            format: 'depth24plus',
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
         });
     }
 
@@ -126,7 +134,6 @@ export class Renderer {
             this.dimensions.triangleSideLength/2, sqrt3UnitLength, 3*this.dimensions.triangleSideLength/2, sqrt3UnitLength,
             0, 2 * sqrt3UnitLength, this.dimensions.triangleSideLength, 2 * sqrt3UnitLength,
         ]);
-        this.verticesPerSection = vertexData.length;
 
         this.vertexBuffer = this.device.createBuffer({
             label: "Vertex Buffer",
@@ -147,7 +154,7 @@ export class Renderer {
         const indexData: Uint16Array = new Uint16Array([
             0, 1, 2, 1, 3, 2, 2, 5, 4, 2, 3, 5
         ]);
-        this.numIndices = indexData.length;
+        this.indicesPerSection = indexData.length;
         this.indexBuffer = this.device.createBuffer({
             label: "Triangles Arrow Instance Buffer",
             size: indexData.byteLength,
@@ -234,13 +241,12 @@ export class Renderer {
                 loadOp: "clear",
                 storeOp: "store"
             }],
-            /*
             depthStencilAttachment: {
-                view: depthTexture.createView(),
+                view: this.depthTex.createView(),
                 depthClearValue: 1.0,
                 depthLoadOp: 'clear',
                 depthStoreOp: 'store',
-            }, */
+            }
         });
 
         const view: mat4 = mat4.invert(mat4.create(), this.perspective.camera);
@@ -253,7 +259,7 @@ export class Renderer {
         pass.setBindGroup(0, this.bindGroup);
         pass.setVertexBuffer(0, this.vertexBuffer);
         pass.setIndexBuffer(this.indexBuffer, "uint16");
-        pass.drawIndexed(this.numIndices, this.dimensions.lengthInSections * this.dimensions.heightInSections);
+        pass.drawIndexed(this.indicesPerSection, this.dimensions.lengthInSections * this.dimensions.heightInSections);
         pass.end();
 
         this.device.queue.submit([encoder.finish()]);
