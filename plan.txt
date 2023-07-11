@@ -1,10 +1,5 @@
 Current:
-Trying to get the height map to work
-
-Next:
-Turn culling back on
-Add a depth texture
+Perlin noise height
 
 Later:
-Pick hash randomizer
-Perlin noise height
+Turn culling back on
