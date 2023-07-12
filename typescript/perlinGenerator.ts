@@ -11,8 +11,11 @@ export class PerlinGenerator {
     pipeline: GPUComputePipeline;
     bindGroup: GPUBindGroup;
     heightMap: GPUBuffer;
+    gradientBuffer: GPUBuffer;
+    intermediaryBuffers: Array<GPUBuffer>; //buffers to interpolate between
     dimensions: GPUBuffer;
     vertices: VerticesInfo;
+    numGradients: number;
     workgroupSize: number;
 
     constructor(device: GPUDevice) {
@@ -27,8 +30,12 @@ export class PerlinGenerator {
             total: (1+2*mapDimensions.heightInSections)*(mapDimensions.lengthInSections+1)
         };
 
+        this.numGradients = (1+mapDimensions.heightInSections)*(1+mapDimensions.lengthInSections);
+
         this.makeDimensionsBuffer();
         this.makeHeightMapBuffer();
+        this.makeIntermediaryBuffers();
+        this.makeGradientBuffer();
         const bindLayout = this.makeBindGroup();
         const shaderModule = await makeShaderModule(this.device, "./shaders/compute.wgsl");
 
@@ -65,6 +72,25 @@ export class PerlinGenerator {
         });
     }
 
+    private makeGradientBuffer() {
+        this.gradientBuffer = this.device.createBuffer({
+            label: "Gradient buffer",
+            size: 8*this.numGradients,
+            usage: GPUBufferUsage.STORAGE
+        });
+    }
+
+    private makeIntermediaryBuffers() {
+        this.intermediaryBuffers = new Array<GPUBuffer>(4);
+        for (let i=0; i<4; i++) {
+            this.intermediaryBuffers[i] = this.device.createBuffer({
+                label: "Intermediary buffer ${i}",
+                size: 4*this.vertices.total,
+                usage: GPUBufferUsage.STORAGE
+            });
+        }
+    }
+
     private makeBindGroup() {
         const bindLayout: GPUBindGroupLayout = this.device.createBindGroupLayout({
             label: "Perlin bind group layout",
@@ -74,6 +100,26 @@ export class PerlinGenerator {
                 buffer: { type: "uniform" }
             }, {
                 binding: 1,
+                visibility: GPUShaderStage.COMPUTE,
+                buffer: { type: "storage" }
+            }, {
+                binding: 2,
+                visibility: GPUShaderStage.COMPUTE,
+                buffer: { type: "storage" }
+            }, {
+                binding: 3,
+                visibility: GPUShaderStage.COMPUTE,
+                buffer: { type: "storage" }
+            }, {
+                binding: 4,
+                visibility: GPUShaderStage.COMPUTE,
+                buffer: { type: "storage" }
+            }, {
+                binding: 5,
+                visibility: GPUShaderStage.COMPUTE,
+                buffer: { type: "storage" }
+            }, {
+                binding: 6,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "storage" }
             }]
@@ -88,6 +134,21 @@ export class PerlinGenerator {
             }, {
                 binding: 1,
                 resource: { buffer: this.heightMap }
+            }, {
+                binding: 2,
+                resource: { buffer: this.gradientBuffer }
+            }, {
+                binding: 3,
+                resource: { buffer: this.intermediaryBuffers[0] }
+            }, {
+                binding: 4,
+                resource: { buffer: this.intermediaryBuffers[1] }
+            }, {
+                binding: 5,
+                resource: { buffer: this.intermediaryBuffers[2] }
+            }, {
+                binding: 6,
+                resource: { buffer: this.intermediaryBuffers[3] }
             }]
         });
 
