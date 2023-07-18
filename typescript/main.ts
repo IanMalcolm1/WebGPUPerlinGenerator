@@ -4,7 +4,7 @@ import { PerlinGenerator } from "./perlinGenerator";
 
 async function main() {
     const mapHeightSections = 32;
-    const mapLengthSections = Math.floor(mapHeightSections*2*Math.sqrt(3)); //to account for triangles being taller than they are wide
+    const mapLengthSections = Math.floor(mapHeightSections*Math.sqrt(3)); //to account for triangles being taller than they are wide
     const triangleUnitLength = 32;
 
     const mapDimensions: utils.MapDimensions = {
@@ -15,8 +15,8 @@ async function main() {
 
     const { device, canvas, context } = await utils.initWebGPU();
 
-    const perlinGenerator: PerlinGenerator = new PerlinGenerator(device);
-    await perlinGenerator.init(mapDimensions);
+    const perlinGenerator: PerlinGenerator = new PerlinGenerator(device, mapDimensions);
+    await perlinGenerator.init();
     const heightMapBuffer: GPUBuffer =  perlinGenerator.getHeightMap();
 
     const renderer: Renderer = new Renderer(device, canvas, context);

@@ -1,5 +1,8 @@
 Current:
-Perlin noise height
+Perlin noise
+Should probably use different pipelines for gradient creation, intermediary creation, and interpolation
 
 Later:
 Turn culling back on
+Add generation seeding
+Make sure I have the pcg algorithm right

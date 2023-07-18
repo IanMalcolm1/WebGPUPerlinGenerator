@@ -127,7 +127,7 @@ export class Renderer {
     }
 
     private makeVertexBuffer(): GPUVertexBufferLayout {
-        const sqrt3UnitLength = this.dimensions.triangleSideLength * Math.sqrt(3);
+        const sqrt3UnitLength = this.dimensions.triangleSideLength/2 * Math.sqrt(3);
 
         const vertexData: Float32Array = new Float32Array([
             0, 0, this.dimensions.triangleSideLength, 0,

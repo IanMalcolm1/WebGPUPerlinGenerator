@@ -31,7 +31,7 @@ fn vert_entry(in: VertIn) -> VertOut {
     var out: VertOut;
     out.pos = vec4f(
         in.pos.x+f32(dim.triangle_unit_len*(in.instance_index%dim.map_len_sections)),
-        in.pos.y+2*sqrt(3)*f32(dim.triangle_unit_len*(in.instance_index/dim.map_len_sections)),
+        in.pos.y+sqrt(3)*f32(dim.triangle_unit_len*(in.instance_index/dim.map_len_sections)),
         height_map[get_height_map_index(in)],
         1
     );
