@@ -1,5 +1,5 @@
 struct VerticesInfo {
-    length: u32,
+    width: u32,
     height: u32
 };
 
@@ -13,21 +13,11 @@ struct VerticesInfo {
 
 @compute @workgroup_size(8, 8)
 fn perlin_entry(@builtin(global_invocation_id) coords: vec3u) {
-    if (coords.x>=vertices.length || coords.y >= vertices.height) {
+    if (coords.x>=vertices.width || coords.y >= vertices.height) {
         return;
     }
-    let index: u32 = coords.x + (coords.y*vertices.length);
+    let index: u32 = coords.x + (coords.y*vertices.width);
     heights[index] = f32(pcg(index));
-    /*
-    if (coords.y==0) {
-        heights[index] = 100;
-    }
-    else if (coords.x==0) {
-        heights[index] = 200;
-    }
-    else {
-        heights[index] = 0;
-    }*/
 }
 
 //Taken from https://www.shadertoy.com/view/XlGcRh
