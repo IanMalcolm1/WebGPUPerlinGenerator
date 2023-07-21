@@ -1,6 +1,7 @@
 struct VerticesInfo {
     width: u32,
-    height: u32
+    height: u32,
+    sideLength: u32
 };
 
 @group(0) @binding(0) var<uniform> vertices: VerticesInfo;

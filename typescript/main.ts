@@ -3,7 +3,7 @@ import { Renderer } from "./renderer";
 import { PerlinGenerator } from "./perlinGenerator";
 
 async function main() {
-    const mapHeightSections = 32;
+    const mapHeightSections = 16;
     const mapLengthSections = Math.floor(mapHeightSections*Math.sqrt(3)); //to account for triangles being taller than they are wide
     const triangleUnitLength = 32;
 

@@ -3,23 +3,27 @@ import { MapDimensions, makeShaderModule } from "./utils";
 interface VerticesInfo {
     length: number,
     height: number,
-    total: number
+    triangleSideLength: number
 };
+
+interface GradientDimensions {
+    widthVertices: number,
+    heightVertices: number,
+    sideLenth: number
+}
 
 interface PerlinBindGroups {
     gradGen?: GPUBindGroup,
-    dotProduct?: GPUBindGroup,
-    interpolation?: GPUBindGroup
+    dotProduct?: GPUBindGroup
 };
 
 interface PerlinPipelines {
     gradGen?: GPUComputePipeline,
-    dotProduct?: GPUComputePipeline,
-    interpolation?: GPUComputePipeline
+    dotProduct?: GPUComputePipeline
 };
 
 interface DimensionsBuffers {
-    gradientVertices: GPUBuffer,
+    gradVertices: GPUBuffer,
     allVertices: GPUBuffer
 }
 
@@ -29,46 +33,36 @@ export class PerlinGenerator {
     bindGroups: PerlinBindGroups;
     heightMap: GPUBuffer;
     gradientBuffer: GPUBuffer;
-    dotProductBuffers: Array<GPUBuffer>; //dot product buffers to interpolate between
     dimensions: DimensionsBuffers;
     allVertices: VerticesInfo; //all vertices
-    gradientVertices: VerticesInfo; //ignores odd rows of vertices, but adds extra column
-    triangleSideLength: number;
+    gradientDimensions: GradientDimensions; //ignores odd rows of vertices, but adds extra column
+    heightsReadBuffer: GPUBuffer;
 
     constructor(device: GPUDevice, mapDimensions: MapDimensions) {
         this.device = device;
-        this.triangleSideLength = mapDimensions.triangleSideLength;
 
         this.allVertices = {
             length: mapDimensions.lengthInSections+1,
             height: 1+2*mapDimensions.heightInSections,
-            total: (1+2*mapDimensions.heightInSections)*(mapDimensions.lengthInSections+1)
-        };
-
-        //extends one past last section
-        this.gradientVertices = {
-            length: 2+mapDimensions.lengthInSections,
-            height: 2+mapDimensions.heightInSections,
-            total: (2+mapDimensions.heightInSections)*(2+mapDimensions.lengthInSections)
+            triangleSideLength: mapDimensions.triangleSideLength
         };
 
         this.bindGroups = {
             gradGen: null,
-            dotProduct: null,
-            interpolation: null
+            dotProduct: null
         }
 
         this.pipelines = {
             gradGen: null,
-            dotProduct: null,
-            interpolation: null
+            dotProduct: null
         }
     }
 
     async init() {
-        this.makeDimensionsBuffers();
+        let granularity = 8;
+        
+        this.makeDimensionsBuffers(granularity);
         this.makeHeightMapBuffer();
-        this.makeDotProductBuffers();
         this.makeGradientBuffer();
 
         await this.makeGradGenPipeline();
@@ -114,63 +108,86 @@ export class PerlinGenerator {
         });
     }
 
-    //width/height of gradient vertices
-    private makeDimensionsBuffers() {
-        const gradientDimensions: Uint32Array = new Uint32Array([
-            this.gradientVertices.length, this.gradientVertices.height
+    private makeDimensionsBuffers(granularity: number) {
+        let perlinSquareSideLength = Math.floor(this.allVertices.triangleSideLength*granularity);
+
+        let mapHeight = this.allVertices.height*this.allVertices.triangleSideLength*Math.sqrt(3);
+        let mapWidth = this.allVertices.length*this.allVertices.triangleSideLength;
+
+        let vecsVertical = Math.floor(mapHeight/perlinSquareSideLength);
+        if (vecsVertical*this.allVertices.height<=mapHeight) {
+            vecsVertical++;
+        }
+        let vecsHorizontal = Math.floor(mapWidth/perlinSquareSideLength);
+        if (vecsHorizontal*this.allVertices.length<=mapWidth) {
+            vecsHorizontal++;
+        }
+
+        const vecsDimensions: Uint32Array = new Uint32Array([
+            vecsHorizontal, vecsVertical
         ]);
-        let gradientVerticesBuffer: GPUBuffer = this.device.createBuffer({
+        const vecsSideLength: Float32Array = new Float32Array([
+            perlinSquareSideLength
+        ]);
+        let vecsDimensionsBuffer: GPUBuffer = this.device.createBuffer({
             label: "Gradient Vertices Dimensions",
-            size: gradientDimensions.byteLength,
+            size: vecsDimensions.byteLength + vecsSideLength.byteLength,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
 
         const allVerticesDimensions: Uint32Array = new Uint32Array([
-            this.allVertices.length, this.allVertices.height, this.triangleSideLength
+            this.allVertices.length, this.allVertices.height
+        ]);
+        const triangleSides: Float32Array = new Float32Array([
+            this.allVertices.triangleSideLength
         ]);
         let allVerticesBuffer: GPUBuffer = this.device.createBuffer({
             label: "All Vertices Dimensions",
-            size: allVerticesDimensions.byteLength,
+            size: allVerticesDimensions.byteLength + triangleSides.byteLength,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
 
+        this.gradientDimensions = {
+            widthVertices: vecsHorizontal,
+            heightVertices: vecsVertical,
+            sideLenth: perlinSquareSideLength
+        }
+
         this.dimensions = {
-            gradientVertices: gradientVerticesBuffer,
+            gradVertices: vecsDimensionsBuffer,
             allVertices: allVerticesBuffer
         };
         
-        this.device.queue.writeBuffer(this.dimensions.gradientVertices, 0, gradientDimensions);
+        this.device.queue.writeBuffer(this.dimensions.gradVertices, 0, vecsDimensions);
+        this.device.queue.writeBuffer(this.dimensions.gradVertices, vecsDimensions.byteLength, vecsSideLength);
         this.device.queue.writeBuffer(this.dimensions.allVertices, 0, allVerticesDimensions);
+        this.device.queue.writeBuffer(this.dimensions.allVertices, allVerticesDimensions.byteLength, triangleSides);
     }
 
     //am f32 for each vertex in the map
     private makeHeightMapBuffer() {
         this.heightMap = this.device.createBuffer({
             label: "Height Map",
-            size: this.allVertices.total * 4,
-            usage: GPUBufferUsage.STORAGE
+            size: this.allVertices.length*this.allVertices.height * 4,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
         });
+
+        this.heightsReadBuffer = this.device.createBuffer({
+            label: "Height map reading buffer",
+            size: this.allVertices.length*this.allVertices.height*4,
+            usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST
+        });
+
+
     }
 
     //a vec2f for each gradient vertex
     private makeGradientBuffer() {
         this.gradientBuffer = this.device.createBuffer({
             label: "Gradient buffer",
-            size: 8*this.gradientVertices.total,
+            size: 8*this.gradientDimensions.heightVertices*this.gradientDimensions.widthVertices,
             usage: GPUBufferUsage.STORAGE
         });
-    }
-
-    //4 sets of an f32 for each vertex in the map
-    private makeDotProductBuffers() {
-        this.dotProductBuffers = new Array<GPUBuffer>(4);
-        for (let i=0; i<4; i++) {
-            this.dotProductBuffers[i] = this.device.createBuffer({
-                label: "Dot product buffer ${i}",
-                size: 4*this.allVertices.total,
-                usage: GPUBufferUsage.STORAGE
-            });
-        }
     }
 
     private makeGradGenBindGroup() {
@@ -192,7 +209,7 @@ export class PerlinGenerator {
             layout: bindLayout,
             entries: [{
                 binding: 0,
-                resource: { buffer: this.dimensions.gradientVertices }
+                resource: { buffer: this.dimensions.gradVertices }
             }, {
                 binding: 1,
                 resource: { buffer: this.gradientBuffer }
@@ -212,21 +229,13 @@ export class PerlinGenerator {
             }, {
                 binding: 1,
                 visibility: GPUShaderStage.COMPUTE,
-                buffer: { type: "storage" }
+                buffer: { type: "uniform" }
             }, {
                 binding: 2,
                 visibility: GPUShaderStage.COMPUTE,
-                buffer: { type: "storage" }
+                buffer: { type: "read-only-storage" }
             }, {
                 binding: 3,
-                visibility: GPUShaderStage.COMPUTE,
-                buffer: { type: "storage" }
-            }, {
-                binding: 4,
-                visibility: GPUShaderStage.COMPUTE,
-                buffer: { type: "storage" }
-            }, {
-                binding: 5,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "storage" }
             }]
@@ -240,19 +249,13 @@ export class PerlinGenerator {
                 resource: { buffer: this.dimensions.allVertices }
             }, {
                 binding: 1,
-                resource: { buffer: this.gradientBuffer }
+                resource: { buffer: this.dimensions.gradVertices }
             }, {
                 binding: 2,
-                resource: { buffer: this.dotProductBuffers[0] }
+                resource: { buffer: this.gradientBuffer }
             }, {
                 binding: 3,
-                resource: { buffer: this.dotProductBuffers[1] }
-            }, {
-                binding: 4,
-                resource: { buffer: this.dotProductBuffers[2] }
-            }, {
-                binding: 5,
-                resource: { buffer: this.dotProductBuffers[3] }
+                resource: { buffer: this.heightMap }
             }]
         });
 
@@ -264,13 +267,13 @@ export class PerlinGenerator {
     }
 
 
-    run() {
+    async run() {
         const encoder: GPUCommandEncoder = this.device.createCommandEncoder();
         const gradientGenPass: GPUComputePassEncoder = encoder.beginComputePass();
 
         gradientGenPass.setPipeline(this.pipelines.gradGen);
         gradientGenPass.setBindGroup(0, this.bindGroups.gradGen);
-        gradientGenPass.dispatchWorkgroups(this.gradientVertices.length, this.gradientVertices.height);
+        gradientGenPass.dispatchWorkgroups(this.gradientDimensions.widthVertices, this.gradientDimensions.heightVertices);
         gradientGenPass.end();
 
         const dotProductPass: GPUComputePassEncoder = encoder.beginComputePass();
@@ -279,8 +282,22 @@ export class PerlinGenerator {
         dotProductPass.dispatchWorkgroups(this.allVertices.length, this.allVertices.height);
         dotProductPass.end();
 
-        //TODO: interpolation pass
+        encoder.copyBufferToBuffer(this.heightMap, 0, this.heightsReadBuffer, 0, this.heightMap.size);
 
         this.device.queue.submit([encoder.finish()]);
+
+        await this.heightsReadBuffer.mapAsync(GPUMapMode.READ);
+        let heightsBlob = this.heightsReadBuffer.getMappedRange();
+        let heightsArray = new Float32Array(heightsBlob);
+        
+        let bigString: string = heightsArray.byteLength+"\n";
+        for (let x=0; x<this.allVertices.length; x++) {
+            for (let y=0; y<this.allVertices.height; y++) {
+                bigString += heightsArray[x+this.allVertices.length*y]+", ";
+            }
+            bigString += "\n";
+        }
+        document.getElementById("stuff").textContent = heightsArray.toString();;
+        this.heightsReadBuffer.unmap();
     }
 }
