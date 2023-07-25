@@ -16,7 +16,8 @@ struct Dimension {
 
 @group(0) @binding(0) var<uniform> dim: Dimension;
 @group(0) @binding(1) var<uniform> perpective_matrix: mat4x4f;
-@group(0) @binding(2) var<storage> height_map: array<f32>;
+@group(0) @binding(2) var<uniform> amplitude: f32;
+@group(0) @binding(3) var<storage> height_map: array<f32>;
 
 
 
@@ -38,8 +39,8 @@ fn vert_entry(in: VertIn) -> VertOut {
 
     out.color = vec4f(
         0,
-        1-(out.pos.z/1500+0.5),
-        out.pos.z/1500+0.5,
+        1-(out.pos.z/amplitude+0.5),
+        out.pos.z/amplitude+0.5,
         1
     );
 

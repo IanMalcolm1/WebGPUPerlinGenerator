@@ -9,6 +9,11 @@ export interface PerspectiveSettings {
     camera: mat4
 }
 
+interface AmplitudeStuff {
+    value: number,
+    buffer: GPUBuffer
+};
+
 export class Renderer {
     private device: GPUDevice;
     private canvas: HTMLCanvasElement;
@@ -21,7 +26,7 @@ export class Renderer {
     private indicesPerSection: number;
     private dimensions: utils.MapDimensions;
     private perspective: PerspectiveSettings;
-    private amplitude: number;
+    private amplitude: AmplitudeStuff;
 
     constructor(device: GPUDevice, canvas: HTMLCanvasElement, context: GPUCanvasContext) {
         this.device = device;
@@ -31,10 +36,10 @@ export class Renderer {
 
     async init(mapDimensions: utils.MapDimensions, heightMapBuffer: GPUBuffer, amplitude: number) {
         this.dimensions = mapDimensions;
-        this.amplitude = amplitude;
 
         const dimensionsBuffer: GPUBuffer = this.makeDimensionsBuffer();
         const vertexBufferLayout: GPUVertexBufferLayout = this.makeVertexBuffer();
+        this.makeAmplitudeBuffer(amplitude);
         this.makeDepthTexture();
         this.makeIndexBuffer();
         this.makePerspectiveBuffer();
@@ -54,8 +59,13 @@ export class Renderer {
                 visibility: GPUShaderStage.VERTEX,
                 buffer: { type: "uniform" }
             }, {
-                //height map
+                //amplitude
                 binding: 2,
+                visibility: GPUShaderStage.VERTEX,
+                buffer: { type: "uniform" }
+            }, {
+                //height map
+                binding: 3,
                 visibility: GPUShaderStage.VERTEX,
                 buffer: { type: "read-only-storage" }
             }]
@@ -71,6 +81,9 @@ export class Renderer {
                 resource: { buffer: this.perspective.buffer }
             }, {
                 binding: 2,
+                resource: { buffer: this.amplitude.buffer }
+            }, {
+                binding: 3,
                 resource: { buffer: heightMapBuffer }
             }]
         });
@@ -96,7 +109,7 @@ export class Renderer {
                 targets: [{ format: navigator.gpu.getPreferredCanvasFormat() }]
             },
             primitive: {
-                //cullMode: "back"
+                cullMode: "back"
             },
             depthStencil: {
                 depthWriteEnabled: true,
@@ -182,12 +195,27 @@ export class Renderer {
 
         this.perspective.translation[0] = this.dimensions.lengthInSections * this.dimensions.triangleSideLength / 2;
         this.perspective.translation[1] = this.dimensions.heightInSections * this.dimensions.triangleSideLength/2 * Math.sqrt(3);
-        this.perspective.translation[2] = this.amplitude;
+        this.perspective.translation[2] = this.amplitude.value;
 
         mat4.translate(this.perspective.camera, this.perspective.camera, this.perspective.translation);
         mat4.rotateX(this.perspective.camera, this.perspective.camera, Math.PI / 2);
 
         this.perspective.translation.fill(0);
+    }
+
+    private makeAmplitudeBuffer(value: number) {
+        let buffer = this.device.createBuffer({
+            label: "Amplitude buffer",
+            size: 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+
+        this.amplitude = {
+            value: value,
+            buffer: buffer
+        };
+
+        this.device.queue.writeBuffer(this.amplitude.buffer, 0, new Float32Array([this.amplitude.value]));
     }
 
     private printStats() {
