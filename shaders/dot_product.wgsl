@@ -6,37 +6,42 @@ struct VerticesInfo {
 
 @group(0) @binding(0) var<uniform> allVertices: VerticesInfo;
 @group(0) @binding(1) var<uniform> gradVertices: VerticesInfo;
-@group(0) @binding(2) var<storage> gradients: array<vec2f>;
-@group(0) @binding(3) var<storage, read_write> heights: array<f32>;
+@group(0) @binding(2) var<uniform> amplitude: f32;
+@group(0) @binding(3) var<storage> gradients: array<vec2f>;
+@group(0) @binding(4) var<storage, read_write> heights: array<f32>;
 
 @compute @workgroup_size(8,8)
 fn generate_dots(@builtin(global_invocation_id) index: vec3u) {
+    if (index.x>=allVertices.width || index.y>=allVertices.height) {
+        return;
+    }
+
     let coords = map_coords(index);
-    let ulGradCoords = vec2u(
+    let ulGradVertex = vec2u(
         u32(floor(coords.x/gradVertices.sideLength)),
         u32(floor(coords.y/gradVertices.sideLength))
     );
 
     let offset = vec2f(
-        (coords.x-f32(ulGradCoords.x)*gradVertices.sideLength)/gradVertices.sideLength,
-        (coords.y-f32(ulGradCoords.y)*gradVertices.sideLength)/gradVertices.sideLength
+        (coords.x-f32(ulGradVertex.x)*gradVertices.sideLength)/gradVertices.sideLength,
+        (coords.y-f32(ulGradVertex.y)*gradVertices.sideLength)/gradVertices.sideLength
     );
-    let urVec = vec2f(1-offset.x, offset.y);
-    let blVec = vec2f(offset.x, 1-offset.y);
-    let brVec = vec2f(1-offset.x, 1-offset.y);
+    let urVec = vec2f(offset.x-1, offset.y);
+    let blVec = vec2f(offset.x, offset.y-1);
+    let brVec = vec2f(offset.x-1, offset.y-1);
 
-    let ulDot = dot(offset, gradients[grad_1d_index(ulGradCoords)]);
-    let urDot = dot(urVec, gradients[grad_1d_index(vec2u(ulGradCoords.x+1, ulGradCoords.y))]);
-    let blDot = dot(blVec, gradients[grad_1d_index(vec2u(ulGradCoords.x, ulGradCoords.y+1))]);
-    let brDot = dot(brVec, gradients[grad_1d_index(vec2u(ulGradCoords.x+1, ulGradCoords.y+1))]);
+    let ulDot = dot(offset, gradients[grad_1d_index(ulGradVertex)]);
+    let urDot = dot(urVec, gradients[grad_1d_index(vec2u(ulGradVertex.x+1, ulGradVertex.y))]);
+    let blDot = dot(blVec, gradients[grad_1d_index(vec2u(ulGradVertex.x, ulGradVertex.y+1))]);
+    let brDot = dot(brVec, gradients[grad_1d_index(vec2u(ulGradVertex.x+1, ulGradVertex.y+1))]);
 
     let fadeX = fade(offset.x);
     let fadeY = fade(offset.y);
 
-    heights[map_1d_index(index)] = 100*interpolate(
-        fadeY,
-        interpolate(fadeX, ulDot, urDot),
-        interpolate(fadeX, blDot, brDot)
+    heights[map_1d_index(index)] += amplitude*interpolate(
+        fadeX,
+        interpolate(fadeY, ulDot, blDot),
+        interpolate(fadeY, urDot, brDot)
     );
 }
 
@@ -57,7 +62,7 @@ fn interpolate(frac: f32, val1: f32, val2: f32) -> f32 {
 }
 
 fn grad_1d_index(index: vec2u) -> u32 {
-    return index.x+index.y*gradVertices.width;
+    return index.x + index.y*gradVertices.width;
 }
 
 fn map_1d_index(index: vec3u) -> u32 {

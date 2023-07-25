@@ -5,35 +5,38 @@ struct VerticesInfo {
 };
 
 @group(0) @binding(0) var<uniform> vertices: VerticesInfo;
-@group(0) @binding(1) var<storage, read_write> gradients: array<vec2f>;
+@group(0) @binding(1) var<uniform> seed: u32;
+@group(0) @binding(2) var<storage, read_write> gradients: array<vec2f>;
+
+const PI = 3.141592654;
 
 @compute @workgroup_size(8,8)
 fn generate_gradients(@builtin(global_invocation_id) index: vec3u) {
-    if (index.x > vertices.width || index.y > vertices.height) {
+    if (index.x >= vertices.width || index.y >= vertices.height) {
         return;
     }
     let base = pcg2d(vec2u(index.x, index.y));
-    let base_f = vec2f(f32(base.x), f32(base.y));
-    let magnitude = sqrt(base_f.x*base_f.x + base_f.y*base_f.y);
-    let unitVec = base_f/magnitude;
+    let base_f = vec2f(f32(base.x%1000000)/1000000, f32(base.y%1000000)/1000000);
 
-    gradients[index.x+index.y*vertices.width] = unitVec;
+    let theta = acos(2*base_f.x-1);
+    let phi = 2*base_f.y*PI;
+
+    let grad = vec2f(
+        cos(phi) * sin(theta),
+        sin(phi) * sin(theta)
+    );
+
+    gradients[index.x+index.y*vertices.width] = grad;
 }
 
+
 fn pcg2d(in: vec2u) -> vec2u {
-    var v = in * 1664525u + 1013904223u;
+    let num = seed + in.x*2 + in.y*vertices.width*2;
+    return vec2u(pcg1d(num), pcg1d(num+1));
+}
 
-    v.x += v.y * 1664525u;
-    v.y += v.x * 1664525u;
-
-    v.x = v.x ^ (in.x>>16u);
-    v.y = v.y ^ (in.y>>16u);
-
-    v.x += v.y * 1664525u;
-    v.y += v.x * 1664525u;
-
-    v.x = v.x ^ (in.x>>16u);
-    v.y = v.y ^ (in.y>>16u);
-
-    return v;
+fn pcg1d(in: u32) -> u32 {
+    let state: u32 = in*747796405+2891336453;
+    let word: u32 = ((state >> ((state>>28) + 4u)) ^ state) * 277803737;
+    return (word >> 22) ^ word;
 }

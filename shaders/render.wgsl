@@ -36,14 +36,15 @@ fn vert_entry(in: VertIn) -> VertOut {
         1
     );
 
-    out.pos = perpective_matrix*out.pos;
-
     out.color = vec4f(
-        f32(in.instance_index)/(f32(dim.map_len_sections*dim.map_len_sections)/3.5),
         0,
-        1-f32(in.instance_index)/(f32(dim.map_len_sections*dim.map_len_sections)/3.5),
+        1-(out.pos.z/1500+0.5),
+        out.pos.z/1500+0.5,
         1
     );
+
+    out.pos = perpective_matrix*out.pos;
+
     return out;
 }
 

@@ -21,6 +21,7 @@ export class Renderer {
     private indicesPerSection: number;
     private dimensions: utils.MapDimensions;
     private perspective: PerspectiveSettings;
+    private amplitude: number;
 
     constructor(device: GPUDevice, canvas: HTMLCanvasElement, context: GPUCanvasContext) {
         this.device = device;
@@ -28,8 +29,9 @@ export class Renderer {
         this.context = context;
     }
 
-    async init(mapDimensions: utils.MapDimensions, heightMapBuffer: GPUBuffer) {
+    async init(mapDimensions: utils.MapDimensions, heightMapBuffer: GPUBuffer, amplitude: number) {
         this.dimensions = mapDimensions;
+        this.amplitude = amplitude;
 
         const dimensionsBuffer: GPUBuffer = this.makeDimensionsBuffer();
         const vertexBufferLayout: GPUVertexBufferLayout = this.makeVertexBuffer();
@@ -179,8 +181,8 @@ export class Renderer {
         }
 
         this.perspective.translation[0] = this.dimensions.lengthInSections * this.dimensions.triangleSideLength / 2;
-        this.perspective.translation[1] = this.dimensions.heightInSections * this.dimensions.triangleSideLength * Math.sqrt(3);
-        this.perspective.translation[2] = 512;
+        this.perspective.translation[1] = this.dimensions.heightInSections * this.dimensions.triangleSideLength/2 * Math.sqrt(3);
+        this.perspective.translation[2] = this.amplitude;
 
         mat4.translate(this.perspective.camera, this.perspective.camera, this.perspective.translation);
         mat4.rotateX(this.perspective.camera, this.perspective.camera, Math.PI / 2);
@@ -268,7 +270,7 @@ export class Renderer {
     fillPerspectiveMatrix(matrix: mat4): mat4 {
         const aspect = this.canvas.clientWidth / this.canvas.clientHeight;
         const zNear = 1;
-        const zFar = 20000;
+        const zFar = 200000;
         const f = Math.tan((Math.PI - this.perspective.fovY) / 2);
         const zRangeInvrs = 1 / (zNear - zFar);
         mat4.set(matrix,
