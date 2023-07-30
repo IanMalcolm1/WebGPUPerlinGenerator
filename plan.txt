@@ -1,11 +1,5 @@
 Current:
-Color heights less than 0 blue
-Heights near but above 0 yellow to brown
-Higher up light green
-Then dark green
-Then white
 
 Later:
-Turn culling back on
-Add generation seeding
-Better prng
+Better prng?
+Chunks?

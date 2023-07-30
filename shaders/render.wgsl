@@ -14,9 +14,16 @@ struct Dimension {
     triangle_unit_len: u32
 };
 
+struct HeightColor {
+    height: f32,
+    r: f32,
+    g: f32,
+    b: f32
+};
+
 @group(0) @binding(0) var<uniform> dim: Dimension;
 @group(0) @binding(1) var<uniform> perpective_matrix: mat4x4f;
-@group(0) @binding(2) var<uniform> amplitude: f32;
+@group(0) @binding(2) var<storage> colors: array<HeightColor>;
 @group(0) @binding(3) var<storage> height_map: array<f32>;
 
 
@@ -37,16 +44,31 @@ fn vert_entry(in: VertIn) -> VertOut {
         1
     );
 
-    out.color = vec4f(
-        0,
-        1-(out.pos.z/amplitude+0.5),
-        out.pos.z/amplitude+0.5,
-        1
-    );
+    out.color = get_color(out.pos.z);
 
     out.pos = perpective_matrix*out.pos;
 
     return out;
+}
+
+fn get_color(height: f32) -> vec4f {
+    var i: u32 = 1;
+    while (colors[i].height < height) {
+        i++;
+    }
+
+    let lerpFrac: f32 = (height-colors[i-1].height)/(colors[i].height-colors[i-1].height);
+
+    return vec4f(
+        interpolate(lerpFrac, colors[i-1].r, colors[i].r),
+        interpolate(lerpFrac, colors[i-1].g, colors[i].g),
+        interpolate(lerpFrac, colors[i-1].b, colors[i].b),
+        1
+    );
+}
+
+fn interpolate(frac: f32, val1: f32, val2: f32) -> f32 {
+    return val1 + (val2-val1)*frac;
 }
 
 

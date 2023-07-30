@@ -14,6 +14,7 @@ interface AmplitudeStuff {
     buffer: GPUBuffer
 };
 
+
 export class Renderer {
     private device: GPUDevice;
     private canvas: HTMLCanvasElement;
@@ -27,6 +28,8 @@ export class Renderer {
     private dimensions: utils.MapDimensions;
     private perspective: PerspectiveSettings;
     private amplitude: AmplitudeStuff;
+    private colorsBuffer: GPUBuffer;
+    
 
     constructor(device: GPUDevice, canvas: HTMLCanvasElement, context: GPUCanvasContext) {
         this.device = device;
@@ -43,6 +46,7 @@ export class Renderer {
         this.makeDepthTexture();
         this.makeIndexBuffer();
         this.makePerspectiveBuffer();
+        this.makeColorsBuffer();
         const shaderModule = await utils.makeShaderModule(this.device, "./shaders/render.wgsl");
 
         // Render Bind Group
@@ -59,10 +63,10 @@ export class Renderer {
                 visibility: GPUShaderStage.VERTEX,
                 buffer: { type: "uniform" }
             }, {
-                //amplitude
+                //colors
                 binding: 2,
                 visibility: GPUShaderStage.VERTEX,
-                buffer: { type: "uniform" }
+                buffer: { type: "read-only-storage" }
             }, {
                 //height map
                 binding: 3,
@@ -81,7 +85,7 @@ export class Renderer {
                 resource: { buffer: this.perspective.buffer }
             }, {
                 binding: 2,
-                resource: { buffer: this.amplitude.buffer }
+                resource: { buffer: this.colorsBuffer }
             }, {
                 binding: 3,
                 resource: { buffer: heightMapBuffer }
@@ -218,6 +222,30 @@ export class Renderer {
         this.device.queue.writeBuffer(this.amplitude.buffer, 0, new Float32Array([this.amplitude.value]));
     }
 
+    private makeColorsBuffer() {
+        let amp = this.amplitude.value;
+
+        //format: height, color (rgb)
+        let colorsData = new Float32Array([
+            -2*amp, 0,71/255,171/255,  //deep blue (just in case height dips below -amp somehow)
+            -2*amp/3, 0,71/255,171/255,    //deep blue 2
+            -amp/4, 0,150/255,255/255,   //light blue
+            -24*amp/100, 240/255,230/255,140/255,    //yellow
+            -22*amp/100, 225/255,193/255,110/225,  //brown
+            -11*amp/100, 80/255,200/255,120/255,   //light green
+            25*amp/100, 79/255,121/255,66/255,   //dark green
+            75*amp/100, 229/255,228/255,226/255,    //gray
+        ]);
+
+        this.colorsBuffer = this.device.createBuffer({
+            label: "Colors buffer",
+            size: colorsData.byteLength,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+        });
+
+        this.device.queue.writeBuffer(this.colorsBuffer, 0, colorsData);
+    }
+
     private printStats() {
         let stats: string =
             "Translation: " + this.perspective.translation[0] + ", " +
@@ -228,37 +256,22 @@ export class Renderer {
         document.getElementById("stats").textContent = stats;
     }
 
-    handleKeyPress(event: KeyboardEvent) {
-        if (event.code === "KeyW") {
-            this.perspective.translation[2] = -100;
-        }
-        if (event.code === "KeyS") {
-            this.perspective.translation[2] = 100;
-        }
-        if (event.code === "KeyA") {
-            this.perspective.translation[0] = -100;
-        }
-        if (event.code === "KeyD") {
-            this.perspective.translation[0] = 100;
-        }
-        if (event.code === "Space") {
-            this.perspective.translation[1] = 100;
-        }
-        if (event.code === "ShiftLeft") {
-            this.perspective.translation[1] = -100;
-        }
+    private fillPerspectiveMatrix(matrix: mat4): mat4 {
+        const aspect = this.canvas.clientWidth / this.canvas.clientHeight;
+        const zNear = 1;
+        const zFar = 200000;
+        const f = Math.tan((Math.PI - this.perspective.fovY) / 2);
+        const zRangeInvrs = 1 / (zNear - zFar);
+        mat4.set(matrix,
+            f / aspect, 0, 0, 0,
+            0, f, 0, 0,
+            0, 0, zFar * zRangeInvrs, -1,
+            0, 0, zNear * zFar * zRangeInvrs, 1
+        );
 
-        mat4.translate(this.perspective.camera, this.perspective.camera, this.perspective.translation);
-        this.perspective.translation.fill(0);
+        return matrix;
     }
 
-    handleMouseMove(event: MouseEvent) {
-        const rotationY = (3 * (-event.movementX / this.canvas.clientWidth) * (2 * Math.PI)) % (2 * Math.PI);
-        const rotationX = (3 * (-event.movementY / this.canvas.clientWidth) * (2 * Math.PI)) % (2 * Math.PI);
-
-        mat4.rotateX(this.perspective.camera, this.perspective.camera, rotationX);
-        mat4.rotateY(this.perspective.camera, this.perspective.camera, rotationY);
-    }
 
     render() {
         //Pipeline
@@ -295,19 +308,36 @@ export class Renderer {
         this.device.queue.submit([encoder.finish()]);
     }
 
-    fillPerspectiveMatrix(matrix: mat4): mat4 {
-        const aspect = this.canvas.clientWidth / this.canvas.clientHeight;
-        const zNear = 1;
-        const zFar = 200000;
-        const f = Math.tan((Math.PI - this.perspective.fovY) / 2);
-        const zRangeInvrs = 1 / (zNear - zFar);
-        mat4.set(matrix,
-            f / aspect, 0, 0, 0,
-            0, f, 0, 0,
-            0, 0, zFar * zRangeInvrs, -1,
-            0, 0, zNear * zFar * zRangeInvrs, 1
-        );
 
-        return matrix;
+    handleKeyPress(event: KeyboardEvent) {
+        if (event.code === "KeyW") {
+            this.perspective.translation[2] = -100;
+        }
+        if (event.code === "KeyS") {
+            this.perspective.translation[2] = 100;
+        }
+        if (event.code === "KeyA") {
+            this.perspective.translation[0] = -100;
+        }
+        if (event.code === "KeyD") {
+            this.perspective.translation[0] = 100;
+        }
+        if (event.code === "Space") {
+            this.perspective.translation[1] = 100;
+        }
+        if (event.code === "ShiftLeft") {
+            this.perspective.translation[1] = -100;
+        }
+
+        mat4.translate(this.perspective.camera, this.perspective.camera, this.perspective.translation);
+        this.perspective.translation.fill(0);
+    }
+
+    handleMouseMove(event: MouseEvent) {
+        const rotationY = (3 * (-event.movementX / this.canvas.clientWidth) * (2 * Math.PI)) % (2 * Math.PI);
+        const rotationX = (3 * (-event.movementY / this.canvas.clientWidth) * (2 * Math.PI)) % (2 * Math.PI);
+
+        mat4.rotateX(this.perspective.camera, this.perspective.camera, rotationX);
+        mat4.rotateY(this.perspective.camera, this.perspective.camera, rotationY);
     }
 }
