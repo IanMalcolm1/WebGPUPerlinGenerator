@@ -3,3 +3,4 @@ Current:
 Later:
 Better prng?
 Chunks?
+Move height-based color interpolation to an intermediary compute shader?

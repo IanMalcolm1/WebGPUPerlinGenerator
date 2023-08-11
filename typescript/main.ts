@@ -3,7 +3,7 @@ import { Renderer } from "./renderer";
 import { PerlinGenerator, PerlinSettings } from "./perlinGenerator";
 
 async function main() {
-    const mapHeightSections = 512;
+    const mapHeightSections = 400;
     const mapLengthSections = Math.floor(mapHeightSections*Math.sqrt(3)); //sections are taller than they are wide
     const triangleUnitLength = 32;
 
@@ -17,7 +17,7 @@ async function main() {
         seed: 1562131,
         iAmplitude: 10,
         iGranularity: 0.5,
-        layers: 8,
+        layers: 9,
         granularityRatio: 2,
         amplitudeRatio: 2,
         returnMap: false

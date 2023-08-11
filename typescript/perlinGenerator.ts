@@ -113,7 +113,7 @@ export class PerlinGenerator {
 
     private async makeDotProductPipeline() {
         const bindLayout = this.makeDotProdBindGroup();
-        const gradGenModule = await makeShaderModule(this.device, "./shaders/dot_product.wgsl");
+        const gradGenModule = await makeShaderModule(this.device, "./shaders/perlin_main.wgsl");
 
         const pipelineLayout: GPUPipelineLayout = this.device.createPipelineLayout({
             label: "Dot product pipeline layout",
