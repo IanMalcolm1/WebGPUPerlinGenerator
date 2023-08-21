@@ -17,23 +17,26 @@
     <div id="settings">
         <fieldset>
             <legend>Generation Settings</legend>
-            <input id="seed_input" type="number" step="1" min="0" max="4294967295">
+            <input id="seed_input" type="number" step="1" min="0" max="4294967295" value="0">
             <label for="seed_input">Seed</label>
             <br>
             <input id="iamp_input" type="range" step="1" min="1" max="1000000">
             <label for="iamp_input">Initial Amplitude</label>
             <br>
+            <input id="amp_ratio_input" type="range" step="0.1" min="1" max="10">
+            <label for="amp_ratio_input">Amplitude Ratio</label>
+            <br>
             <input id="igran_input" type="range" step="0.1" min="0.1" max="10">
             <label for="igran_input">Initial Granularity</label>
+            <br>
+            <input id="gran_ratio_input" type="range" step="1" min="0" max="4294967295">
+            <label for="gran_ratio_input">Granularity Ratio</label>
             <br>
             <input id="layers_input" type="range" step="1" min="1" max="10">
             <label for="layers_input">Layers</label>
             <br>
-            <input id="amp_ratio_input" type="range" step="0.1" min="1" max="10">
-            <label for="amp_ratio_input">Amplitude</label>
-            <br>
-            <input id="gran_ratio_input" type="range" step="1" min="0" max="4294967295">
-            <label for="gran_ratio_input">Granularity Ratio</label>
+            <input id="return_map_input" type="checkbox">
+            <label for="return_map_input">Return Map</label>
         </fieldset>
     </div>
 </body>

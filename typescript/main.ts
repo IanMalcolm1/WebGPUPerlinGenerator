@@ -1,8 +1,11 @@
 import * as utils from "./utils";
 import { Renderer } from "./renderer";
 import { PerlinGenerator, PerlinSettings } from "./perlinGenerator";
+import { SettingsManager } from "./settingsManager";
 
 async function main() {
+    var settingsMan = new SettingsManager();
+    
     const mapHeightSections = 400;
     const mapLengthSections = Math.floor(mapHeightSections*Math.sqrt(3)); //sections are taller than they are wide
     const triangleUnitLength = 32;

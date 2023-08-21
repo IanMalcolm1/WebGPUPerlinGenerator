@@ -3,10 +3,10 @@ import { MapDimensions, makeShaderModule } from "./utils";
 export interface PerlinSettings {
     seed: number,
     iAmplitude: number,
-    iGranularity: number,
-    layers: number,
-    granularityRatio: number,
     amplitudeRatio: number,
+    iGranularity: number,
+    granularityRatio: number,
+    layers: number,
     returnMap: boolean
 };
 
