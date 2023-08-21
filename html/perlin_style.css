@@ -1,0 +1,19 @@
+#screen {
+    display: block;
+    margin: auto;
+}
+
+#settings {
+    display: block;
+    width: 50%;
+    margin: auto;
+}
+
+fieldset {
+    font-size: larger;
+}
+
+input {
+    width: 20em;
+    font-size: large;
+}

@@ -19,7 +19,7 @@ interface VerticesInfo {
 interface GradientDimensions {
     widthVertices: number,
     heightVertices: number,
-    sideLenth: number
+    sideLength: number
 }
 
 interface PerlinBindGroups {
@@ -173,7 +173,7 @@ export class PerlinGenerator {
         this.gradientDimensions = {
             widthVertices: vecsHorizontal,
             heightVertices: vecsVertical,
-            sideLenth: perlinSquareSideLength
+            sideLength: perlinSquareSideLength
         }
     }
 
@@ -317,7 +317,7 @@ export class PerlinGenerator {
             this.gradientDimensions.widthVertices, this.gradientDimensions.heightVertices
         ]);
         const vecsSideLength: Float32Array = new Float32Array([
-            this.gradientDimensions.sideLenth
+            this.gradientDimensions.sideLength
         ]);
 
         this.device.queue.writeBuffer(this.gradientsDimensionsBuffer, 0, vecsDimensions);
