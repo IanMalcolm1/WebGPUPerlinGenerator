@@ -69,16 +69,27 @@ export class PerlinGenerator {
     }
 
     async init() {
-        this.makeSeedBuffer();
-        this.makeAllVerticesDimensionsBuffer();
-        this.makeGradientDimensionsBuffers();
-        this.makeAmplitudeBuffer();
         this.makeHeightMapBuffer();
+        this.makeAmplitudeBuffer();
+        this.makeVertexInfoBuffer();
+        this.makeGradientDimensionsBuffers();
+
+        await this.makeChangeableStuff();
+    }
+
+    async makeChangeableStuff() {
+        this.makeSeedBuffer();
         this.makeGradientBuffer();
+        this.makeHeightMapBuffer();
+
         await this.makeGradGenPipeline();
         await this.makeDotProductPipeline();
     }
 
+    async changeSettings(settings: PerlinSettings) {
+        this.settings = settings;
+        await this.init();
+    }
 
 
     private makeSeedBuffer() {
@@ -130,7 +141,7 @@ export class PerlinGenerator {
         });
     }
 
-    private makeAllVerticesDimensionsBuffer() {
+    private makeVertexInfoBuffer() {
         const allVerticesDimensions: Uint32Array = new Uint32Array([
             this.allVertices.length, this.allVertices.height
         ]);
@@ -195,13 +206,13 @@ export class PerlinGenerator {
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
         });
 
-        this.heightsReadBuffer = this.device.createBuffer({
-            label: "Height map reading buffer",
-            size: this.allVertices.length * this.allVertices.height * 4,
-            usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST
-        });
-
-
+        if (this.settings.returnMap == true) {
+            this.heightsReadBuffer = this.device.createBuffer({
+                label: "Height map reading buffer",
+                size: this.allVertices.length * this.allVertices.height * 4,
+                usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST
+            });
+        }
     }
 
     //a vec2f for each gradient vertex
@@ -326,17 +337,6 @@ export class PerlinGenerator {
 
     getHeightMap(): GPUBuffer {
         return this.heightMap;
-    }
-
-    getFullAmplitude(): number {
-        let val = 0;
-        let curr = this.settings.iAmplitude;
-        for (let i = 0; i < this.settings.layers - 1; i++) {
-            val += curr;
-            curr *= this.settings.amplitudeRatio;
-        }
-
-        return val;
     }
 
 

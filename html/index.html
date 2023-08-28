@@ -17,28 +17,32 @@
     <div id="settings">
         <fieldset>
             <legend>Generation Settings</legend>
+            <p id="settings_warning" hidden="true">Amplitude Exceeds Bounds</p>
             <input id="seed_input" type="number" step="1" min="0" max="4294967295" value="0">
             <label for="seed_input">Seed</label>
             <br>
-            <input id="iamp_input" type="range" step="1" min="1" max="1000000">
+            <input id="iamp_input" type="range" step="1" min="1" max="20" value="10">
+            <label id="iamp_input_number" for="iamp_input">(10)</label>
             <label for="iamp_input">Initial Amplitude</label>
             <br>
-            <input id="amp_ratio_input" type="range" step="0.1" min="1" max="10">
+            <input id="amp_ratio_input" type="range" step="0.1" min="1" max="5" value="2">
+            <label id="amp_ratio_input_number" for="amp_ratio_input">(2)</label>
             <label for="amp_ratio_input">Amplitude Ratio</label>
             <br>
-            <input id="igran_input" type="range" step="0.1" min="0.1" max="10">
+            <input id="igran_input" type="range" step="0.1" min="0.5" max="5" value="0.5">
+            <label id="igran_input_number" for="igran_input">(0.5)</label>
             <label for="igran_input">Initial Granularity</label>
             <br>
-            <input id="gran_ratio_input" type="range" step="1" min="0" max="4294967295">
+            <input id="gran_ratio_input" type="range" step="0.1" min="1" max="10" value="2">
+            <label id="gran_ratio_input_number" for="gran_ratio_input">(2)</label>
             <label for="gran_ratio_input">Granularity Ratio</label>
             <br>
-            <input id="layers_input" type="range" step="1" min="1" max="10">
+            <input id="layers_input" type="range" step="1" min="1" max="20" value="8">
+            <label id="layers_input_number" for="layers_input">(8)</label>
             <label for="layers_input">Layers</label>
-            <br>
-            <input id="return_map_input" type="checkbox">
-            <label for="return_map_input">Return Map</label>
         </fieldset>
     </div>
+    
 </body>
 
 </html>

@@ -26,6 +26,7 @@ export class Renderer {
     private indexBuffer: GPUBuffer;
     private indicesPerSection: number;
     private dimensions: utils.MapDimensions;
+    private dimensionsBuffer: GPUBuffer;
     private perspective: PerspectiveSettings;
     private amplitude: AmplitudeStuff;
     private colorsBuffer: GPUBuffer;
@@ -40,58 +41,15 @@ export class Renderer {
     async init(mapDimensions: utils.MapDimensions, heightMapBuffer: GPUBuffer, amplitude: number) {
         this.dimensions = mapDimensions;
 
-        const dimensionsBuffer: GPUBuffer = this.makeDimensionsBuffer();
-        const vertexBufferLayout: GPUVertexBufferLayout = this.makeVertexBuffer();
+        this.makeDimensionsBuffer();
         this.makeAmplitudeBuffer(amplitude);
         this.makeDepthTexture();
         this.makeIndexBuffer();
         this.makePerspectiveBuffer();
         this.makeColorsBuffer();
+        const vertexBufferLayout: GPUVertexBufferLayout = this.makeVertexBuffer();
         const shaderModule = await utils.makeShaderModule(this.device, "./shaders/render.wgsl");
-
-        // Render Bind Group
-        const renderBindGroupLayout: GPUBindGroupLayout = this.device.createBindGroupLayout({
-            label: "Render Bind Group Layout",
-            entries: [{
-                //dimensions
-                binding: 0,
-                visibility: GPUShaderStage.VERTEX,
-                buffer: { type: "uniform" }
-            }, {
-                //perspective matrix
-                binding: 1,
-                visibility: GPUShaderStage.VERTEX,
-                buffer: { type: "uniform" }
-            }, {
-                //colors
-                binding: 2,
-                visibility: GPUShaderStage.VERTEX,
-                buffer: { type: "read-only-storage" }
-            }, {
-                //height map
-                binding: 3,
-                visibility: GPUShaderStage.VERTEX,
-                buffer: { type: "read-only-storage" }
-            }]
-        });
-        this.bindGroup = this.device.createBindGroup({
-            label: "Render Bind Group",
-            layout: renderBindGroupLayout,
-            entries: [{
-                binding: 0,
-                resource: { buffer: dimensionsBuffer }
-            }, {
-                binding: 1,
-                resource: { buffer: this.perspective.buffer }
-            }, {
-                binding: 2,
-                resource: { buffer: this.colorsBuffer }
-            }, {
-                binding: 3,
-                resource: { buffer: heightMapBuffer }
-            }]
-        });
-
+        const renderBindGroupLayout = this.makeBindGroup(heightMapBuffer);
 
         // Render Pipeline
         const renderPipelineLayout: GPUPipelineLayout = this.device.createPipelineLayout({
@@ -123,26 +81,81 @@ export class Renderer {
         });
     }
 
+    async updateHeightMap(heightMap: GPUBuffer, amplitude: number) {
+        //this.makeDepthTexture();
+        this.amplitude.buffer.destroy();
+        this.colorsBuffer.destroy();
+        
+        this.makeColorsBuffer();
+        this.makeAmplitudeBuffer(amplitude);
+        this.makeBindGroup(heightMap);
+    }
+
+    private makeBindGroup(heightMapBuffer: GPUBuffer): GPUBindGroupLayout {
+                // Render Bind Group
+                const renderBindGroupLayout: GPUBindGroupLayout = this.device.createBindGroupLayout({
+                    label: "Render Bind Group Layout",
+                    entries: [{
+                        //dimensions
+                        binding: 0,
+                        visibility: GPUShaderStage.VERTEX,
+                        buffer: { type: "uniform" }
+                    }, {
+                        //perspective matrix
+                        binding: 1,
+                        visibility: GPUShaderStage.VERTEX,
+                        buffer: { type: "uniform" }
+                    }, {
+                        //colors
+                        binding: 2,
+                        visibility: GPUShaderStage.VERTEX,
+                        buffer: { type: "read-only-storage" }
+                    }, {
+                        //height map
+                        binding: 3,
+                        visibility: GPUShaderStage.VERTEX,
+                        buffer: { type: "read-only-storage" }
+                    }]
+                });
+                this.bindGroup = this.device.createBindGroup({
+                    label: "Render Bind Group",
+                    layout: renderBindGroupLayout,
+                    entries: [{
+                        binding: 0,
+                        resource: { buffer: this.dimensionsBuffer }
+                    }, {
+                        binding: 1,
+                        resource: { buffer: this.perspective.buffer }
+                    }, {
+                        binding: 2,
+                        resource: { buffer: this.colorsBuffer }
+                    }, {
+                        binding: 3,
+                        resource: { buffer: heightMapBuffer }
+                    }]
+                });
+        return renderBindGroupLayout;
+    }
+
     private makeDepthTexture() {
         this.depthTex = this.device.createTexture({
+            label: "Render depth texture",
             size: [this.context.getCurrentTexture().width, this.context.getCurrentTexture().height],
             format: 'depth24plus',
             usage: GPUTextureUsage.RENDER_ATTACHMENT,
         });
     }
 
-    private makeDimensionsBuffer(): GPUBuffer {
+    private makeDimensionsBuffer() {
         const planeDimensions: Uint32Array = new Uint32Array([
             this.dimensions.lengthInSections, this.dimensions.triangleSideLength
         ]);
-        const planeDimensionsUniform: GPUBuffer = this.device.createBuffer({
+        this.dimensionsBuffer = this.device.createBuffer({
             label: "Plane Dimensions",
             size: planeDimensions.byteLength,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
-        this.device.queue.writeBuffer(planeDimensionsUniform, 0, planeDimensions);
-
-        return planeDimensionsUniform;
+        this.device.queue.writeBuffer(this.dimensionsBuffer, 0, planeDimensions);
     }
 
     private makeVertexBuffer(): GPUVertexBufferLayout {
@@ -235,6 +248,7 @@ export class Renderer {
             -11*amp/100, 80/255,200/255,120/255,   //light green
             25*amp/100, 79/255,121/255,66/255,   //dark green
             75*amp/100, 229/255,228/255,226/255,    //gray
+            2*amp,  229/255,228/255,226/255,    //gray 2
         ]);
 
         this.colorsBuffer = this.device.createBuffer({
@@ -246,7 +260,7 @@ export class Renderer {
         this.device.queue.writeBuffer(this.colorsBuffer, 0, colorsData);
     }
 
-    private printStats() {
+    private printCameraInfo() {
         let stats: string =
             "Translation: " + this.perspective.translation[0] + ", " +
             this.perspective.translation[1] + ", " + this.perspective.translation[2] +

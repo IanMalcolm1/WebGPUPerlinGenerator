@@ -9,6 +9,11 @@
     margin: auto;
 }
 
+#settings_warning {
+    color: red;
+    margin: none;
+}
+
 fieldset {
     font-size: larger;
 }
