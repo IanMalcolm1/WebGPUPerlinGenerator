@@ -1,4 +1,4 @@
-import { MapDimensions, makeShaderModule } from "./utils";
+import { MapDimensions, getFullAmplitude, makeShaderModule } from "./utils";
 
 export interface PerlinSettings {
     seed: number,
@@ -312,11 +312,6 @@ export class PerlinGenerator {
         return bindLayout;
     }
 
-
-    private setSeed(seed: number) {
-        this.device.queue.writeBuffer(this.seedBuffer, 0, new Uint32Array([seed]));
-    }
-
     private setAmplitude(amplitude: number) {
         this.device.queue.writeBuffer(this.amplitudeBuffer, 0, new Float32Array([amplitude]));
     }
@@ -335,8 +330,12 @@ export class PerlinGenerator {
         this.device.queue.writeBuffer(this.gradientsDimensionsBuffer, vecsDimensions.byteLength, vecsSideLength);
     }
 
-    getHeightMap(): GPUBuffer {
+    public getHeightMap(): GPUBuffer {
         return this.heightMap;
+    }
+
+    public getAmplitude() {
+        return getFullAmplitude(this.settings);
     }
 
 
@@ -377,5 +376,7 @@ export class PerlinGenerator {
             let blob = this.heightsReadBuffer.getMappedRange(0, this.heightsReadBuffer.size);
             return new Float32Array(blob);
         }
+
+        await this.device.queue.onSubmittedWorkDone(); //I want to know when the generation is done
     }
 }

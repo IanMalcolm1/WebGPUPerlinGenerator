@@ -1,4 +1,5 @@
 import { PerlinSettings } from "./perlinGenerator";
+import { getFullAmplitude } from "./utils";
 
 interface SettingsInputs {
     seed: HTMLInputElement,
@@ -13,6 +14,7 @@ interface SettingsInputs {
 export class SettingsManager {
     private settings: PerlinSettings;
     private maxAmplitude: number;
+    private shouldUpdate: boolean;
 
     constructor() {
         const seedInput = <HTMLInputElement> document.getElementById("seed_input");
@@ -35,7 +37,7 @@ export class SettingsManager {
         this.maxAmplitude = 8000;
     }
 
-    public setUpdateFunction(updateFunc: () => void) {
+    public setUpdateFunction() {
         const seedInput = <HTMLInputElement> document.getElementById("seed_input");
 
         const iAmpInput = <HTMLInputElement> document.getElementById("iamp_input");
@@ -57,15 +59,15 @@ export class SettingsManager {
 
         seedInput.addEventListener("input", () => {
             this.settings.seed = seedInput.valueAsNumber;
-            updateFunc();
+            this.shouldUpdate = true;
         });
 
         iAmpInput.addEventListener("input", () => {
             this.settings.iAmplitude = iAmpInput.valueAsNumber;
             iAmpInputNum.textContent = "("+iAmpInput.value+")";
-            if (this.getFullAmplitude()<this.maxAmplitude) {
+            if (getFullAmplitude(this.settings)<this.maxAmplitude) {
                 warning.hidden = true;
-                updateFunc();
+                this.shouldUpdate = true;
             }
             else {
                 warning.hidden = false;
@@ -75,9 +77,9 @@ export class SettingsManager {
         ampRatioInput.addEventListener("input", () => {
             this.settings.amplitudeRatio = ampRatioInput.valueAsNumber;
             ampRatioNum.textContent = "("+ampRatioInput.value+")";
-            if (this.getFullAmplitude()<this.maxAmplitude) {
+            if (getFullAmplitude(this.settings)<this.maxAmplitude) {
                 warning.hidden = true;
-                updateFunc();
+                this.shouldUpdate = true;
             }
             else {
                 warning.hidden = false;
@@ -87,21 +89,21 @@ export class SettingsManager {
         iGranInput.addEventListener("input", () => {
             this.settings.iGranularity = iGranInput.valueAsNumber;
             iGranInputNum.textContent = "("+iGranInput.value+")";
-            updateFunc();
+            this.shouldUpdate = true;
         });
 
         granRatioInput.addEventListener("input", () => {
             this.settings.granularityRatio = granRatioInput.valueAsNumber;
             granRatioInputNum.textContent = "("+granRatioInput.value+")";
-            updateFunc();
+            this.shouldUpdate = true;
         });
 
         layersInput.addEventListener("input", () => {
             this.settings.layers = layersInput.valueAsNumber;
             layersInputNum.textContent = "("+layersInput.value+")";
-            if (this.getFullAmplitude()<this.maxAmplitude) {
+            if (getFullAmplitude(this.settings)<this.maxAmplitude) {
                 warning.hidden = true;
-                updateFunc();
+                this.shouldUpdate = true;
             }
             else {
                 warning.hidden = false;
@@ -114,14 +116,11 @@ export class SettingsManager {
     }
 
     
-    public getFullAmplitude(): number {
-        let val = 0;
-        let curr = this.settings.iAmplitude;
-        for (let i = 0; i < this.settings.layers - 1; i++) {
-            val += curr;
-            curr *= this.settings.amplitudeRatio;
+    public shouldUpdateTerrain(): boolean {
+        if (this.shouldUpdate) {
+            this.shouldUpdate = false;
+            return true;
         }
-
-        return val;
+        return false;
     }
 };

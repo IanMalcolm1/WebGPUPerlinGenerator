@@ -1,7 +1,6 @@
 Current:
-Figure out where memory leak is
-Or maybe it's stacking setIntervals due to async madness???
-Problem with scroll bars? Doesn't happen when changing seed...
+Now seems to break when pulling amplitude, amp ratio, and layers left quickly
+- so probably another problem with calculating amplitude... somehow
 
 
 Later:

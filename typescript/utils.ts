@@ -1,6 +1,7 @@
 import { mat4, vec3 } from "gl-matrix";
 import {guify} from "guify";
 import { PerspectiveSettings } from "./renderer";
+import { PerlinSettings } from "./perlinGenerator";
 
 export interface MapDimensions {
     lengthInSections: number,
@@ -40,4 +41,16 @@ export async function makeShaderModule(device: GPUDevice, filePath: string): Pro
     });
 
     return renderModule;
+}
+
+
+export function getFullAmplitude(settings: PerlinSettings): number {
+    let val = 0;
+    let amp = settings.iAmplitude;
+    for (let i = 0; i < settings.layers; i++) {
+        val += amp;
+        amp *= settings.amplitudeRatio;
+    }
+
+    return val;
 }

@@ -81,13 +81,9 @@ export class Renderer {
         });
     }
 
-    async updateHeightMap(heightMap: GPUBuffer, amplitude: number) {
-        //this.makeDepthTexture();
-        this.amplitude.buffer.destroy();
-        this.colorsBuffer.destroy();
-        
-        this.makeColorsBuffer();
+    async updateHeightMap(heightMap: GPUBuffer, amplitude: number) {        
         this.makeAmplitudeBuffer(amplitude);
+        this.makeColorsBuffer();
         this.makeBindGroup(heightMap);
     }
 
@@ -287,7 +283,7 @@ export class Renderer {
     }
 
 
-    render() {
+    async render() {
         //Pipeline
         const encoder: GPUCommandEncoder = this.device.createCommandEncoder({ label: "Command encoder" });
         const pass: GPURenderPassEncoder = encoder.beginRenderPass({
@@ -320,6 +316,8 @@ export class Renderer {
         pass.end();
 
         this.device.queue.submit([encoder.finish()]);
+
+        await this.device.queue.onSubmittedWorkDone(); //I want to know when the rendering is done
     }
 
 

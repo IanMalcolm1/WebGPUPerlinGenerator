@@ -3,14 +3,8 @@ import { Renderer } from "./renderer";
 import { PerlinGenerator, PerlinSettings } from "./perlinGenerator";
 import { SettingsManager } from "./settingsManager";
 
-
-var intervalId: NodeJS.Timer;
-var device: GPUDevice;
-var canvas: HTMLCanvasElement;
-var context: GPUCanvasContext;
-
 async function main() {
-    const mapHeightSections = 200;
+    const mapHeightSections = 400;
     const mapLengthSections = Math.floor(mapHeightSections*Math.sqrt(3)); //sections are taller than they are wide
     const triangleUnitLength = 32;
 
@@ -20,10 +14,7 @@ async function main() {
         triangleSideLength: triangleUnitLength
     }
 
-    {
-        let temp = await utils.initWebGPU();
-        [device, canvas, context] = [temp.device, temp.canvas, temp.context];
-    }
+    const {device, canvas, context} = await utils.initWebGPU();
     const settingsManager: SettingsManager = new SettingsManager();
     
     const perlinGenerator: PerlinGenerator = new PerlinGenerator(device, mapDimensions, settingsManager.getSettings());
@@ -34,9 +25,9 @@ async function main() {
     await perlinGenerator.run();
 
     const heightMap = perlinGenerator.getHeightMap();
-    await renderer.init(mapDimensions, heightMap, settingsManager.getFullAmplitude());
+    await renderer.init(mapDimensions, heightMap, perlinGenerator.getAmplitude());
 
-    settingsManager.setUpdateFunction(async function() { await remakeTerrain(renderer, perlinGenerator, settingsManager); })
+    settingsManager.setUpdateFunction()
     
 
     document.addEventListener("keydown", function(event) {
@@ -46,23 +37,38 @@ async function main() {
         renderer.handleMouseMove(event);
     });
 
-    intervalId = setInterval(function() { renderer.render() }, 17);
+    while (true) {
+        const lastTime = Date.now();
+
+        await update(renderer, perlinGenerator, settingsManager);
+
+        await sleep(Math.max(16-Date.now()-lastTime, 0));
+    }
    
 }
 
 
+async function sleep(time: number) {
+    return new Promise((resolve) => { setTimeout(resolve, time) });
+}
+
+
+async function update(renderer: Renderer, generator: PerlinGenerator, settingsManager: SettingsManager) {
+    if (settingsManager.shouldUpdateTerrain()) {
+        await remakeTerrain(renderer, generator, settingsManager);
+    }
+    await renderer.render();
+}
+
+
 async function remakeTerrain(renderer: Renderer, generator: PerlinGenerator, settingsManager: SettingsManager) {
-    clearInterval(intervalId);
-    
     await generator.changeSettings(settingsManager.getSettings());
     await generator.run();
 
     const heightMap = generator.getHeightMap();
-    const amplitude = settingsManager.getFullAmplitude();
+    const amplitude = generator.getAmplitude();
 
     await renderer.updateHeightMap(heightMap, amplitude);
-
-    intervalId = setInterval(function() { renderer.render() }, 17);
 } 
 
 main();
