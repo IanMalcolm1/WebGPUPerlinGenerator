@@ -238,12 +238,12 @@ export class Renderer {
         let colorsData = new Float32Array([
             -2*amp, 0,71/255,171/255,  //deep blue (just in case height dips below -amp somehow)
             -2*amp/3, 0,71/255,171/255,    //deep blue 2
-            -amp/4, 0,150/255,255/255,   //light blue
-            -24*amp/100, 240/255,230/255,140/255,    //yellow
-            -22*amp/100, 225/255,193/255,110/225,  //brown
-            -11*amp/100, 80/255,200/255,120/255,   //light green
-            25*amp/100, 79/255,121/255,66/255,   //dark green
-            27*amp/100, 229/255,228/255,226/255,    //gray
+            -16*amp/100, 0,150/255,255/255,   //light blue
+            -17*amp/100, 240/255,230/255,140/255,    //yellow
+            -15*amp/100, 225/255,193/255,110/225,  //brown
+            -4*amp/100, 80/255,200/255,120/255,   //light green
+            18*amp/100, 79/255,121/255,66/255,   //dark green
+            20*amp/100, 229/255,228/255,226/255,    //gray
             2*amp,  229/255,228/255,226/255,    //gray 2
         ]);
 
