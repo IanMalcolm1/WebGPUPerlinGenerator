@@ -1,6 +1,6 @@
 Current:
-Now seems to break when pulling amplitude, amp ratio, and layers left quickly
-- so probably another problem with calculating amplitude... somehow
+Fixed freezing, but underlying problem (amplitude not keeping up between generator and renderer) remains
+Make color levels fixed??? Kind of like that idea.
 
 
 Later:

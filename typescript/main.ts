@@ -28,6 +28,7 @@ async function main() {
     await renderer.init(mapDimensions, heightMap, perlinGenerator.getAmplitude());
 
     settingsManager.setUpdateFunction()
+    settingsManager.enableVerticesOutput();
     
 
     document.addEventListener("keydown", function(event) {
@@ -63,10 +64,17 @@ async function update(renderer: Renderer, generator: PerlinGenerator, settingsMa
 
 async function remakeTerrain(renderer: Renderer, generator: PerlinGenerator, settingsManager: SettingsManager) {
     await generator.changeSettings(settingsManager.getSettings());
-    await generator.run();
+    const blob = await generator.run();
+
 
     const heightMap = generator.getHeightMap();
     const amplitude = generator.getAmplitude();
+
+    blob.forEach((value) => {
+        if (value>amplitude || value<-amplitude) {
+            console.log(value);
+        }
+    });
 
     await renderer.updateHeightMap(heightMap, amplitude);
 } 

@@ -53,7 +53,7 @@ fn vert_entry(in: VertIn) -> VertOut {
 
 fn get_color(height: f32) -> vec4f {
     var i: u32 = 1;
-    while (colors[i].height < height) {
+    while( colors[i].height < height  && i<arrayLength(&colors)-2 ) {
         i++;
     }
 

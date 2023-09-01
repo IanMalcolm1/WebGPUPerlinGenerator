@@ -123,4 +123,8 @@ export class SettingsManager {
         }
         return false;
     }
+
+    public enableVerticesOutput() {
+        this.settings.returnMap = true;
+    }
 };
