@@ -367,7 +367,7 @@ export class PerlinGenerator {
             granularity *= this.settings.granularityRatio;
         }
 
-        if (this.settings.returnMap == true) {
+        if (this.settings.returnMap) {
             const encoder: GPUCommandEncoder = this.device.createCommandEncoder();
             encoder.copyBufferToBuffer(this.heightMap, 0, this.heightsReadBuffer, 0, this.heightMap.size);
             this.device.queue.submit([encoder.finish()]);

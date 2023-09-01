@@ -13,7 +13,6 @@ interface SettingsInputs {
 
 export class SettingsManager {
     private settings: PerlinSettings;
-    private maxAmplitude: number;
     private shouldUpdate: boolean;
 
     constructor() {
@@ -31,10 +30,8 @@ export class SettingsManager {
             iGranularity: iGranInput.valueAsNumber,
             granularityRatio: granRatioInput.valueAsNumber,
             layers: layersInput.valueAsNumber,
-            returnMap: false
+            returnMap: true
         };
-
-        this.maxAmplitude = 8000;
     }
 
     public setUpdateFunction() {
@@ -65,25 +62,13 @@ export class SettingsManager {
         iAmpInput.addEventListener("input", () => {
             this.settings.iAmplitude = iAmpInput.valueAsNumber;
             iAmpInputNum.textContent = "("+iAmpInput.value+")";
-            if (getFullAmplitude(this.settings)<this.maxAmplitude) {
-                warning.hidden = true;
-                this.shouldUpdate = true;
-            }
-            else {
-                warning.hidden = false;
-            }
+            this.shouldUpdate = true;
         });
 
         ampRatioInput.addEventListener("input", () => {
             this.settings.amplitudeRatio = ampRatioInput.valueAsNumber;
             ampRatioNum.textContent = "("+ampRatioInput.value+")";
-            if (getFullAmplitude(this.settings)<this.maxAmplitude) {
-                warning.hidden = true;
-                this.shouldUpdate = true;
-            }
-            else {
-                warning.hidden = false;
-            }
+            this.shouldUpdate = true;
         });
 
         iGranInput.addEventListener("input", () => {
@@ -101,18 +86,21 @@ export class SettingsManager {
         layersInput.addEventListener("input", () => {
             this.settings.layers = layersInput.valueAsNumber;
             layersInputNum.textContent = "("+layersInput.value+")";
-            if (getFullAmplitude(this.settings)<this.maxAmplitude) {
-                warning.hidden = true;
-                this.shouldUpdate = true;
-            }
-            else {
-                warning.hidden = false;
-            }
+            this.shouldUpdate = true;
         });
     }
 
     public getSettings(): PerlinSettings {
-        return this.settings;
+        const currSettings: PerlinSettings = {
+            seed: this.settings.seed,
+            iAmplitude: this.settings.iAmplitude,
+            amplitudeRatio: this.settings.amplitudeRatio,
+            iGranularity: this.settings.iGranularity,
+            granularityRatio: this.settings.granularityRatio,
+            layers: this.settings.layers,
+            returnMap: this.settings.returnMap
+        };
+        return currSettings;
     }
 
     

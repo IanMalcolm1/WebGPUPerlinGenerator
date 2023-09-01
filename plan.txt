@@ -1,6 +1,4 @@
 Current:
-Fixed freezing, but underlying problem (amplitude not keeping up between generator and renderer) remains
-Make color levels fixed??? Kind of like that idea.
 
 
 Later:

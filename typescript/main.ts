@@ -64,17 +64,10 @@ async function update(renderer: Renderer, generator: PerlinGenerator, settingsMa
 
 async function remakeTerrain(renderer: Renderer, generator: PerlinGenerator, settingsManager: SettingsManager) {
     await generator.changeSettings(settingsManager.getSettings());
-    const blob = await generator.run();
-
+    await generator.run();
 
     const heightMap = generator.getHeightMap();
     const amplitude = generator.getAmplitude();
-
-    blob.forEach((value) => {
-        if (value>amplitude || value<-amplitude) {
-            console.log(value);
-        }
-    });
 
     await renderer.updateHeightMap(heightMap, amplitude);
 } 

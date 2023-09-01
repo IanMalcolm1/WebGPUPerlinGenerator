@@ -14,14 +14,15 @@
         <canvas id="screen" width="1200" height="800"></canvas>
     </div>
 
+    <p id="movement_off_warning" hidden="true">Amplitude Exceeds Bounds</p>
+
     <div id="settings">
         <fieldset>
             <legend>Generation Settings</legend>
-            <p id="settings_warning" hidden="true">Amplitude Exceeds Bounds</p>
             <input id="seed_input" type="number" step="1" min="0" max="4294967295" value="0">
             <label for="seed_input">Seed</label>
             <br>
-            <input id="iamp_input" type="range" step="1" min="1" max="20" value="10">
+            <input id="iamp_input" type="range" step="0.25" min="1" max="20" value="10">
             <label id="iamp_input_number" for="iamp_input">(10)</label>
             <label for="iamp_input">Initial Amplitude</label>
             <br>

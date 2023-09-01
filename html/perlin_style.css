@@ -9,8 +9,8 @@
     margin: auto;
 }
 
-#settings_warning {
-    color: red;
+#movement_off_warning {
+    font-size: larger;
     margin: none;
 }
 
