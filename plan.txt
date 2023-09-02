@@ -1,4 +1,6 @@
 Current:
+Add esc to stop moving
+Color settings?
 
 
 Later:

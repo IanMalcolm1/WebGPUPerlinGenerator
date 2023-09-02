@@ -3,6 +3,8 @@ import { Renderer } from "./renderer";
 import { PerlinGenerator, PerlinSettings } from "./perlinGenerator";
 import { SettingsManager } from "./settingsManager";
 
+var inputOn: boolean = false;
+
 async function main() {
     const mapHeightSections = 400;
     const mapLengthSections = Math.floor(mapHeightSections*Math.sqrt(3)); //sections are taller than they are wide
@@ -27,15 +29,14 @@ async function main() {
     const heightMap = perlinGenerator.getHeightMap();
     await renderer.init(mapDimensions, heightMap, perlinGenerator.getAmplitude());
 
-    settingsManager.setUpdateFunction()
-    settingsManager.enableVerticesOutput();
     
 
-    document.addEventListener("keydown", function(event) {
-        renderer.handleKeyPress(event);
-    });
+    document.addEventListener("keydown", (event) => { processKeypress(event, renderer) });
+
     document.querySelector("canvas").addEventListener("mousemove", function(event) {
-        renderer.handleMouseMove(event);
+        if (inputOn) {
+            renderer.handleMouseMove(event);
+        }
     });
 
     while (true) {
@@ -70,6 +71,15 @@ async function remakeTerrain(renderer: Renderer, generator: PerlinGenerator, set
     const amplitude = generator.getAmplitude();
 
     await renderer.updateHeightMap(heightMap, amplitude);
-} 
+}
+
+function processKeypress(event: KeyboardEvent, renderer: Renderer) {
+    if (event.key == "Escape") {
+        inputOn = !inputOn;
+    }
+    else {
+        renderer.handleKeyPress(event);
+    }
+}
 
 main();

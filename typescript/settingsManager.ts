@@ -32,6 +32,8 @@ export class SettingsManager {
             layers: layersInput.valueAsNumber,
             returnMap: true
         };
+        
+        this.setUpdateFunction();
     }
 
     public setUpdateFunction() {

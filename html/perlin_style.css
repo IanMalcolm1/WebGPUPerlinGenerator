@@ -1,3 +1,17 @@
+body {
+    background-color: rgb(190, 190, 190);
+}
+
+h1 {
+    text-align: center;
+}
+
+p {
+    font-size: larger;
+    margin: none;
+    text-align: center;
+}
+
 #screen {
     display: block;
     margin: auto;
@@ -7,11 +21,6 @@
     display: block;
     width: 50%;
     margin: auto;
-}
-
-#movement_off_warning {
-    font-size: larger;
-    margin: none;
 }
 
 fieldset {
