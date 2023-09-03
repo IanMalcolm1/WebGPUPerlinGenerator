@@ -208,7 +208,7 @@ export class Renderer {
 
         this.perspective.translation[0] = this.dimensions.lengthInSections * this.dimensions.triangleSideLength / 2;
         this.perspective.translation[1] = this.dimensions.heightInSections * this.dimensions.triangleSideLength/2 * Math.sqrt(3);
-        this.perspective.translation[2] = this.amplitude.value;
+        this.perspective.translation[2] = this.amplitude.value/2;
 
         mat4.translate(this.perspective.camera, this.perspective.camera, this.perspective.translation);
         mat4.rotateX(this.perspective.camera, this.perspective.camera, Math.PI / 2);
@@ -237,13 +237,13 @@ export class Renderer {
         //format: height, color (rgb)
         let colorsData = new Float32Array([
             -2*amp, 0,71/255,171/255,  //deep blue (just in case height dips below -amp somehow)
-            -2*amp/3, 0,71/255,171/255,    //deep blue 2
-            -16*amp/100, 0,150/255,255/255,   //light blue
-            -17*amp/100, 240/255,230/255,140/255,    //yellow
-            -15*amp/100, 225/255,193/255,110/225,  //brown
-            -4*amp/100, 80/255,200/255,120/255,   //light green
-            20*amp/100, 79/255,121/255,66/255,   //dark green
-            37*amp/100, 229/255,228/255,226/255,    //gray
+            -1*amp/3, 0,71/255,171/255,    //deep blue 2
+            -9*amp/100, 0,150/255,255/255,   //light blue
+            -11*amp/100, 225/255,193/255,110/225,    //yellow
+            -7*amp/100, 136/255, 103/255, 78/255,  //brown
+            7*amp/100, 94/255,141/255,77/255,   //light green
+            18*amp/100, 79/255,121/255,66/255,   //dark green
+            38*amp/100, 229/255,228/255,226/255,    //gray
             2*amp,  229/255,228/255,226/255,    //gray 2
         ]);
 
@@ -323,22 +323,22 @@ export class Renderer {
 
     handleKeyPress(event: KeyboardEvent) {
         if (event.code === "KeyW") {
-            this.perspective.translation[2] = -100;
+            this.perspective.translation[2] = -200;
         }
         if (event.code === "KeyS") {
-            this.perspective.translation[2] = 100;
+            this.perspective.translation[2] = 200;
         }
         if (event.code === "KeyA") {
-            this.perspective.translation[0] = -100;
+            this.perspective.translation[0] = -200;
         }
         if (event.code === "KeyD") {
-            this.perspective.translation[0] = 100;
+            this.perspective.translation[0] = 200;
         }
         if (event.code === "Space") {
-            this.perspective.translation[1] = 100;
+            this.perspective.translation[1] = 200;
         }
         if (event.code === "ShiftLeft") {
-            this.perspective.translation[1] = -100;
+            this.perspective.translation[1] = -200;
         }
 
         mat4.translate(this.perspective.camera, this.perspective.camera, this.perspective.translation);

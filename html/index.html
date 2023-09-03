@@ -13,7 +13,7 @@
 
     <h1>Perlin Noise Generator</h1>
 
-    <p>WASD, SHIFT, SPACE to move. MOUSE to pan the camera. ESC to enable/disable camera panning. The settings can be adjusted below.</p>
+    <p>WASD, SHIFT, SPACE to move. MOUSE to pan the camera. CLICK to enable/disable camera panning. The settings can be adjusted below.</p>
 
     <div id="screen_div">
         <canvas id="screen" width="1200" height="800"></canvas>
@@ -25,16 +25,16 @@
             <input id="seed_input" type="number" step="1" min="0" max="4294967295" value="0">
             <label for="seed_input">Seed</label>
             <br>
-            <input id="iamp_input" type="range" step="0.25" min="1" max="20" value="10">
-            <label id="iamp_input_number" for="iamp_input">(10)</label>
+            <input id="iamp_input" type="range" step="0.25" min="1" max="100" value="20">
+            <label id="iamp_input_number" for="iamp_input">(20)</label>
             <label for="iamp_input">Initial Amplitude</label>
             <br>
             <input id="amp_ratio_input" type="range" step="0.1" min="0.1" max="10" value="2">
             <label id="amp_ratio_input_number" for="amp_ratio_input">(2)</label>
             <label for="amp_ratio_input">Amplitude Ratio</label>
             <br>
-            <input id="igran_input" type="range" step="0.1" min="0.5" max="10" value="0.5">
-            <label id="igran_input_number" for="igran_input">(0.5)</label>
+            <input id="igran_input" type="range" step="0.1" min="0.5" max="10" value="2">
+            <label id="igran_input_number" for="igran_input">(2)</label>
             <label for="igran_input">Initial Granularity</label>
             <br>
             <input id="gran_ratio_input" type="range" step="0.1" min="1" max="10" value="2">
@@ -42,7 +42,7 @@
             <label for="gran_ratio_input">Granularity Ratio</label>
             <br>
             <input id="layers_input" type="range" step="1" min="1" max="20" value="9">
-            <label id="layers_input_number" for="layers_input">(8)</label>
+            <label id="layers_input_number" for="layers_input">(9)</label>
             <label for="layers_input">Layers</label>
         </fieldset>
     </div>

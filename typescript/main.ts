@@ -6,7 +6,7 @@ import { SettingsManager } from "./settingsManager";
 var inputOn: boolean = false;
 
 async function main() {
-    const mapHeightSections = 400;
+    const mapHeightSections = 600;
     const mapLengthSections = Math.floor(mapHeightSections*Math.sqrt(3)); //sections are taller than they are wide
     const triangleUnitLength = 32;
 
@@ -29,16 +29,20 @@ async function main() {
     const heightMap = perlinGenerator.getHeightMap();
     await renderer.init(mapDimensions, heightMap, perlinGenerator.getAmplitude());
 
-    
 
+    //movement
     document.addEventListener("keydown", (event) => { processKeypress(event, renderer) });
-
     document.querySelector("canvas").addEventListener("mousemove", function(event) {
         if (inputOn) {
             renderer.handleMouseMove(event);
         }
     });
+    document.getElementById("screen").addEventListener("click", (event) => {
+        inputOn = !inputOn;
+    });
 
+
+    //main loop
     while (true) {
         const lastTime = Date.now();
 
